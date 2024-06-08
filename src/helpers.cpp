@@ -10,9 +10,8 @@
 
 // Check for invalid inputs.
 static void checkErrors(bool rule, const char msg[]) {
-	if( !rule ) {
+	if( !rule ) 
 		throw std::logic_error(msg);
-	}
 }
 
 // This function creates a unique_ptr<char[]> from a const char* source.

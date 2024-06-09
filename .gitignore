@@ -23,8 +23,15 @@
 *.bin
 *.obj
 *.pch
+*.cmake
 **/todo/**
 **/test/**
+**/build/**
+**/CmakeFiles/**
+**/CMakeCache.*
+**/StrTools/**
+**/StringTools/**
+**/x64/**
 !menus/**
 bin/**
 !bin/src**

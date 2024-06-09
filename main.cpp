@@ -1,36 +1,41 @@
 #include <cstdint>
 #include <iostream>
+#include <memory>
 
 #include "src/helpers.hh"
 #include "src/strtools.hh"
 
+constexpr int16_t STRING_MAX_SIZE = 100;
 
 using std::cout, std::cin, std::endl;
 
 int main() {
+	bool mainLoop = true;
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
-	bool mainLoop = true;
+	// Extra message.
+	char* extraMsg = ( char[] )":D";
 
-	do{
+	while( mainLoop ) {
+		helpers::clearScr();
 		cout <<
 			"1. Calculate the length of a string.\n"
 			"2. Concatenate three strings requested.\n"
 			"3. Search for a character in a string.\n"
 			"4. Generate a substring from a string.\n"
 			"0. Exit.\n"
-			"> ";
+			<< extraMsg << "\n\n> ";
 		cin >> selector;
 
 		// Check if the captured value is invalid.
 		if( helpers::isCapturedValueInvalid() ) {
-			cout << "Value is invalid!" << endl;
+			extraMsg = ( char[] ) "Value is invalid!";
 			continue;
 		}
 
 		// Check if the captured value is out of bounds.
 		if( helpers::isOutOfBounds(selector, 0, 4) ) {
-			cout << "Value is out of bounds!" << endl;
+			extraMsg = ( char[] ) "Value is out of bounds!";
 			continue;
 		}
 
@@ -42,6 +47,18 @@ int main() {
 			mainLoop = false;
 			break;
 		case 1: // Calculate the length of a string.
+			cout << "Enter a string (type '/exit' to quit).\n";
+			while( true ) {
+				// Captured user input values.
+				str_p strLen(new char[STRING_MAX_SIZE]);
+				if( helpers::captureAndCheck(strLen, STRING_MAX_SIZE) == 0 ) {
+					break;
+				}
+				// Show the results.
+				cout << "The lenght of '" << strLen.get() << "' is: "
+					<< strTools::len(strLen.get()) << " > ";
+				cout.flush();
+			}
 			break;
 		case 2: // Concatenate three strings requested.
 			break;
@@ -50,7 +67,7 @@ int main() {
 		case 4: // Generate a substring from a string.
 			break;
 		}
-	} while( mainLoop );
+	};
 
 	cout << "Bye bye!" << endl;
 	return 0;

@@ -1,3 +1,6 @@
+// Copyright (c) zperk.
+// License: GNU General Public License v3.0 
+
 #pragma once
 
 #include <array>
@@ -7,53 +10,104 @@
 #include <stdexcept>
 #include <string.h>
 
-#include "strfunc.hh"
+// Equals to: `std::unique_ptr<char[]>`.
+typedef std::unique_ptr<char[]> str_p;
 
+// Equals to: `char*`.
+typedef char* str_raw_p;
+
+// Utility tools for the strTools namespace.
+namespace __strToolsUtil {
+	/***
+	 * @brief Checks for invalid inputs and throws an exception if the rule is violated.
+	 *
+	 * @param rule The condition to be checked.
+	 * @param msg The message to be included in the exception if the rule is violated.
+	 * @throws std::logic_error if the rule is false.
+	 */
+	static void checkErrors(bool rule, const char msg[]) {
+		if( !rule ) {
+			throw std::logic_error(msg);
+		}
+	}
+
+	/***
+	 * @brief Creates a std::unique_ptr<char[]> from a const char* source.
+	 *
+	 * @param src The source C-string.
+	 * @return A unique_ptr<char[]> containing a copy of the source string.
+	 */
+	static str_p makeUniqueStr(const str_raw_p src) {
+		uint64_t srcLen = strlen(src);
+		str_p r = std::make_unique<char[]>(static_cast<uint64_t>( srcLen ) + 1);
+		strcpy(r.get(), src);
+		return r;
+	}
+}
+
+// String tools.
 namespace strTools {
-	static int32_t len(const str n) {
+	/***
+	 * @brief Returns the length of the C-string.
+	 *
+	 * @param n The source C-string.
+	 * @return The length of the string.
+	 */
+	static uint64_t len(const str_raw_p n) {
 		return strlen(n);
 	}
 
-	static str_p concatStr(const str S1, const str S2) {
-		auto s1 = strFunc::makeUniqueStr(S1);
-		auto s2 = strFunc::makeUniqueStr(S2);
+	/***
+	 * @brief Concatenates two C-strings into a new unique_ptr<char[]>.
+	 *
+	 * @param S1 The first source C-string.
+	 * @param S2 The second source C-string.
+	 * @return A unique_ptr<char[]> containing the concatenated string.
+	 */
+	static str_p concatStr(const str_raw_p S1, const str_raw_p S2) {
+		auto s1 = __strToolsUtil::makeUniqueStr(S1);
+		auto s2 = __strToolsUtil::makeUniqueStr(S2);
 
-		if( !s1 or !s2 ) {
+		if( !s1 || !s2 ) {
 			return nullptr;
 		}
 
 		// Calculate the length of the new concatenated string
-		std::array<int32_t, 2> lenVals {
+		std::array<uint64_t, 2> lenVals {
 			len(S1), len(S2)
 		};
 
 		// Allocate memory for the concatenated string
-		str_p r = std::make_unique<char[]>(static_cast<size_t>( lenVals[0] ) + lenVals[1] + 1);
+		str_p r = std::make_unique<char[]>(
+			static_cast<uint64_t>( lenVals[0] ) + lenVals[1] + 1
+		);
 		// Copy the first string into the result
 		strcpy(r.get(), s1.get());
 		// Concatenate the second string
-		std::strcat(r.get(), s2.get());
+		strcat(r.get(), s2.get());
 		return r;
 	}
 
 	/***
-	 * This allows you to extract a substring from a string. It works by specifying
-	 * the starting index `i` and the length ofthe substring `j`.
+	 * @brief Extracts a substring from a string.
 	 *
+	 * @param S The source C-string.
 	 * @param i Position of the first character to include (index 0 = first character).
 	 * @param j Number of characters to extract from i.
+	 * @return A unique_ptr<char[]> containing the extracted substring.
+	 * @throws std::logic_error if indices are out of bounds.
 	 */
-	static str_p subStr(const str S, int32_t i, int32_t j) {
-		auto s = strFunc::makeUniqueStr(S);
+	static str_p subStr(const str_raw_p S, uint64_t i, uint64_t j) {
+		auto s = __strToolsUtil::makeUniqueStr(S);
 
-		strFunc::checkErrors(
-			( i < 0 ) or ( j < 0 ) or ( i + j > len(s.get()) ),
+		__strToolsUtil::checkErrors(
+			( i < 0 ) || ( j < 0 ) || ( i + j > len(s.get()) ),
 			"The indices 'i' and 'j' must be non-negative and "
 			"the length must not exceed the length of the original string.\n"
 		);
 
 		str_p r = std::make_unique<char[]>(
-			( static_cast<size_t>( j ) + 1 ) * sizeof(char)
+			( static_cast<uint64_t>( j ) + 1 ) * sizeof(char)
 		);
 		strncpy(r.get(), s.get() + i, j);
 		r[j] = '\0';
@@ -62,13 +116,17 @@ namespace strTools {
 
 
 	/***
-	 * A string or part of a string can be inserted into another string.
-	 * This procedure consists of inserting the string “s1” into the string “s1” such that
-	 * the first character of `s2` is the i-th character of the result.
+	 * @brief Inserts one string into another at the specified position.
+	 *
+	 * @param s1 The destination C-string.
+	 * @param s2 The source C-string to be inserted.
+	 * @param i The position at which to insert s2 into s1.
+	 * @return A unique_ptr<char[]> containing the resulting string.
+	 * @throws std::logic_error if the position is out of bounds.
 	 */
-	static str_p insertStr(const str s1, const str s2, int32_t i) {
-		strFunc::checkErrors(
-			1 <= i <= len(s1) + 1,
+	static str_p insertStr(const str_raw_p s1, const str_raw_p s2, uint64_t i) {
+		__strToolsUtil::checkErrors(
+			1 <= i || i <= len(s1) + 1,
 			"The value of 'i' must be in the range of 1 to the length of C1 + 1"
 		);
 		return concatStr(
@@ -78,20 +136,25 @@ namespace strTools {
 	}
 
 	/***
-	 * Allows you to remove substrings from a string.
-	 * Removes from string `s` the substring of length `j` that starts at position `i`.
+	 * @brief Removes a substring from a string.
+	 *
+	 * @param s The source C-string.
+	 * @param i The starting position of the substring to be removed.
+	 * @param j The length of the substring to be removed.
+	 * @return A unique_ptr<char[]> containing the resulting string.
+	 * @throws std::logic_error if indices are out of bounds.
 	 */
-	static str_p delSubStr(const str s, int32_t i, int32_t j) {
-		strFunc::checkErrors(
-			1 <= i <= len(s),
-			"Position of `i` must be between 1 and the length of the string."
+	static str_p delSubStr(const str_raw_p s, uint64_t i, uint64_t j) {
+		__strToolsUtil::checkErrors(
+			0 <= i && i < len(s),
+			"Position of `i` must be between 0 and the length of the string."
 		);
-		strFunc::checkErrors(
-			0 <= j <= len(s),
+		__strToolsUtil::checkErrors(
+			0 <= j && j < len(s),
 			"Length `j` must be between 0 and the length of the string."
 		);
-		strFunc::checkErrors(
-			0 <= i + j - 1 <= len(s),
+		__strToolsUtil::checkErrors(
+			0 <= i + j - 1 && i + j - 1 < len(s),
 			"Position i+j-1 must be between 0 and the length of the string."
 		);
 
@@ -102,17 +165,18 @@ namespace strTools {
 	}
 
 	/***
-	 * Locates a sequence of characters within a string, by determining the
-	 * position where a sequence of characters `find` first appears in a string
-	 * `s`. Returns an integer.
-	 * NOTE: If `find` is not found in `s`, returns - 1.
+	 * @brief Finds the first occurrence of a substring within a string.
+	 *
+	 * @param s The source C-string.
+	 * @param find The substring to find.
+	 * @return The index of the first occurrence of the substring, or -1 if not found.
 	 */
-	static int32_t findSubStr(const str s, const str find) {
+	static uint64_t findSubStr(const str_raw_p s, const str_raw_p find) {
 		// Check for invalid pointers.
-		if( s == nullptr or find == nullptr )
+		if( s == nullptr || find == nullptr )
 			return -1;
 
-		std::array<int32_t, 2> lenVals {
+		std::array<uint64_t, 2> lenVals {
 			len(s), len(find)
 		};
 
@@ -137,34 +201,38 @@ namespace strTools {
 	}
 
 	/***
-	 * Replaces the first occurrence of substring `sub1` with another substring `sub2`, in
-	 * string `s`.
-	 * NOTE: If `sub1` is not found in `s`, return the original string.
+	 * @brief Replaces the first occurrence of a substring with another substring.
+	 *
+	 * @param s The source C-string.
+	 * @param sub1 The substring to be replaced.
+	 * @param sub2 The substring to replace with.
+	 * @return A unique_ptr<char[]> containing the resulting string.
+	 * @throws std::logic_error if any of the input pointers are invalid.
 	 */
-	static str_p replaceStr(const str s, const str sub1, const str sub2) {
-		if( !s or !sub1 or !sub2 )
+	static str_p replaceStr(const str_raw_p s, const str_raw_p sub1, const str_raw_p sub2) {
+		if( !s || !sub1 || !sub2 )
 			throw std::logic_error("Pointer value is invalid.");
 
-		auto getSubStr = [](const str s, const str sub) {
-			const str pos = std::strstr(s, sub);
+		auto getSubStr = [](const str_raw_p s, const str_raw_p sub) {
+			const str_raw_p pos = std::strstr(s, sub);
 			if( pos )
-				return (size_t) pos - (size_t) s;
-			return -1ULL;
+				return (uint64_t) pos - (uint64_t) s;
+			return UINT64_MAX;
 			};
 
-		int32_t pos = getSubStr(s, sub1);
+		uint64_t pos = getSubStr(s, sub1);
 		if( pos == -1 )
-			return strFunc::makeUniqueStr(s);
+			return __strToolsUtil::makeUniqueStr(s);
 
-		std::array<int32_t, 3> lenVals {
+		std::array<uint64_t, 3> lenVals {
 			len(s), len(sub1), len(sub2)
 		};
 
 		// Calculate the length of the new string
-		int32_t newLen = lenVals[0] - lenVals[1] + lenVals[2];
+		uint64_t newLen = lenVals[0] - lenVals[1] + lenVals[2];
 
 		// Allocate memory for the new string
-		str_p r = std::make_unique<char[]>(static_cast<size_t>( newLen ) + 1);
+		str_p r = std::make_unique<char[]>(static_cast<uint64_t>( newLen ) + 1);
 
 		// Copy the part before sub1
 		strncpy(r.get(), s, pos);

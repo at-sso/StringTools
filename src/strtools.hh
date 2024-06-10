@@ -10,13 +10,16 @@
 #include <stdexcept>
 #include <string.h>
 
-// Equals to: `std::unique_ptr<char[]>`.
-typedef std::unique_ptr<char[]> str_p;
+namespace strTools {
+	// Equals to: `std::unique_ptr<char[]>`.
+	typedef std::unique_ptr<char[]> strptr;
 
-// Equals to: `char*`.
-typedef char* str_raw_p;
+	// Equals to: `char*`.
+	typedef char* str;
+}
 
 // Utility tools for the strTools namespace.
+// If at any moment you need to use this ns, you are doing something wrong.
 namespace __strToolsUtil {
 	/***
 	 * @brief Checks for invalid inputs and throws an exception if the rule is violated.
@@ -26,7 +29,7 @@ namespace __strToolsUtil {
 	 * @throws std::logic_error if the rule is false.
 	 */
 	static void checkErrors(bool rule, const char msg[]) {
-		if( !rule ) {
+		if( rule == true ) {
 			throw std::logic_error(msg);
 		}
 	}
@@ -37,11 +40,19 @@ namespace __strToolsUtil {
 	 * @param src The source C-string.
 	 * @return A unique_ptr<char[]> containing a copy of the source string.
 	 */
-	static str_p makeUniqueStr(const str_raw_p src) {
+	static strTools::strptr makeUniqueStr(const strTools::str src) {
 		uint64_t srcLen = strlen(src);
-		str_p r = std::make_unique<char[]>(static_cast<uint64_t>( srcLen ) + 1);
+		strTools::strptr r = std::make_unique<char[]>(
+			static_cast<uint64_t>( srcLen ) + 1
+		);
 		strcpy(r.get(), src);
 		return r;
+	}
+
+	static void fixIndex(uint64_t& x) {
+		if( x >= INT64_MAX ) {
+			x = 0ULL;
+		}
 	}
 }
 
@@ -53,7 +64,7 @@ namespace strTools {
 	 * @param n The source C-string.
 	 * @return The length of the string.
 	 */
-	static uint64_t len(const str_raw_p n) {
+	uint64_t len(const str n) {		
 		return strlen(n);
 	}
 
@@ -64,7 +75,7 @@ namespace strTools {
 	 * @param S2 The second source C-string.
 	 * @return A unique_ptr<char[]> containing the concatenated string.
 	 */
-	static str_p concatStr(const str_raw_p S1, const str_raw_p S2) {
+	strptr concatStr(const str S1, const str S2) {
 		auto s1 = __strToolsUtil::makeUniqueStr(S1);
 		auto s2 = __strToolsUtil::makeUniqueStr(S2);
 
@@ -78,7 +89,7 @@ namespace strTools {
 		};
 
 		// Allocate memory for the concatenated string
-		str_p r = std::make_unique<char[]>(
+		strptr r = std::make_unique<char[]>(
 			static_cast<uint64_t>( lenVals[0] ) + lenVals[1] + 1
 		);
 		// Copy the first string into the result
@@ -97,16 +108,17 @@ namespace strTools {
 	 * @return A unique_ptr<char[]> containing the extracted substring.
 	 * @throws std::logic_error if indices are out of bounds.
 	 */
-	static str_p subStr(const str_raw_p S, uint64_t i, uint64_t j) {
+	strptr subStr(const str S, const uint64_t i, uint64_t j) {
 		auto s = __strToolsUtil::makeUniqueStr(S);
+		auto sLen = len(s.get());
 
 		__strToolsUtil::checkErrors(
-			( i < 0 ) || ( j < 0 ) || ( i + j > len(s.get()) ),
+			i > sLen || j > sLen || i + j > sLen,
 			"The indices 'i' and 'j' must be non-negative and "
 			"the length must not exceed the length of the original string.\n"
 		);
 
-		str_p r = std::make_unique<char[]>(
+		strptr r = std::make_unique<char[]>(
 			( static_cast<uint64_t>( j ) + 1 ) * sizeof(char)
 		);
 		strncpy(r.get(), s.get() + i, j);
@@ -124,7 +136,7 @@ namespace strTools {
 	 * @return A unique_ptr<char[]> containing the resulting string.
 	 * @throws std::logic_error if the position is out of bounds.
 	 */
-	static str_p insertStr(const str_raw_p s1, const str_raw_p s2, uint64_t i) {
+	strptr insertStr(const str s1, const str s2, const uint64_t i) {
 		__strToolsUtil::checkErrors(
 			1 <= i || i <= len(s1) + 1,
 			"The value of 'i' must be in the range of 1 to the length of C1 + 1"
@@ -144,7 +156,7 @@ namespace strTools {
 	 * @return A unique_ptr<char[]> containing the resulting string.
 	 * @throws std::logic_error if indices are out of bounds.
 	 */
-	static str_p delSubStr(const str_raw_p s, uint64_t i, uint64_t j) {
+	strptr delSubStr(const str s, const uint64_t i, const uint64_t j) {
 		__strToolsUtil::checkErrors(
 			0 <= i && i < len(s),
 			"Position of `i` must be between 0 and the length of the string."
@@ -171,7 +183,7 @@ namespace strTools {
 	 * @param find The substring to find.
 	 * @return The index of the first occurrence of the substring, or -1 if not found.
 	 */
-	static uint64_t findSubStr(const str_raw_p s, const str_raw_p find) {
+	uint64_t findSubStr(const str s, const str find) {
 		// Check for invalid pointers.
 		if( s == nullptr || find == nullptr )
 			return -1;
@@ -180,8 +192,9 @@ namespace strTools {
 			len(s), len(find)
 		};
 
-		if( lenVals[0] == 0 )
+		if( lenVals[0] == 0 ) {
 			return 0;
+		}
 
 		for( int i = 0; i <= lenVals[0] - lenVals[1]; ++i ) {
 			// Check if `find` matches the substring starting at index i of `s`
@@ -209,15 +222,15 @@ namespace strTools {
 	 * @return A unique_ptr<char[]> containing the resulting string.
 	 * @throws std::logic_error if any of the input pointers are invalid.
 	 */
-	static str_p replaceStr(const str_raw_p s, const str_raw_p sub1, const str_raw_p sub2) {
+	strptr replaceStr(const str s, const str sub1, const str sub2) {
 		if( !s || !sub1 || !sub2 )
 			throw std::logic_error("Pointer value is invalid.");
 
-		auto getSubStr = [](const str_raw_p s, const str_raw_p sub) {
-			const str_raw_p pos = std::strstr(s, sub);
+		auto getSubStr = [](const char* s, const char* sub) {
+			const char* pos = std::strstr(s, sub);
 			if( pos )
 				return (uint64_t) pos - (uint64_t) s;
-			return UINT64_MAX;
+			return 0ULL;
 			};
 
 		uint64_t pos = getSubStr(s, sub1);
@@ -232,7 +245,7 @@ namespace strTools {
 		uint64_t newLen = lenVals[0] - lenVals[1] + lenVals[2];
 
 		// Allocate memory for the new string
-		str_p r = std::make_unique<char[]>(static_cast<uint64_t>( newLen ) + 1);
+		strptr r = std::make_unique<char[]>(static_cast<uint64_t>( newLen ) + 1);
 
 		// Copy the part before sub1
 		strncpy(r.get(), s, pos);

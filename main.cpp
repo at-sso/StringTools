@@ -22,7 +22,7 @@ int main() {
 
 	do {
 		helpers::clearScr();
-		cout <<
+		cout << ( char[] )
 			"1. Calculate the length of a string.\n"
 			"2. Concatenate three strings requested.\n"
 			"3. Search for a character in a string.\n"
@@ -54,21 +54,22 @@ int main() {
 		case 1: { // Calculate the length of a string.
 			strptr strLen(new char[STRING_MAX_SIZE]);
 
-			cout << "Enter a string (type '/exit' to quit).\n";
+			cout << ( char[] ) "Enter a string (type '/exit' to quit).\n";
 			cin.ignore();
 
 			// Start the operation.
-			while( true ) {
+			do {
 				cout << "> ";
 				// Captured user input values.
 				cin.getline(strLen.get(), STRING_MAX_SIZE);
-				if( helpers::checkCapturedValue(strLen.get()) == 0 ) {
+				if( helpers::handleCapturedValue(strLen.get()) ) {
 					break;
 				}
 				// Show the results.
-				cout << "The lenght of '" << strLen.get() << "' is: "
+				cout << 
+					"The length of '" << strLen.get() << "' is: "
 					<< strTools::len(strLen.get()) << "\n";
-			}
+			} while( true );
 
 			// Flush the stream.
 			cout.flush();
@@ -79,7 +80,8 @@ int main() {
 			str strHelper = ( char[] ) "";
 			bool exitWasCaptured = false;
 
-			cout << "Enter 3 strings (type '/exit' at any moment to quit).\n"
+			cout << ( char[] )
+				"Enter 3 strings (type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n";
 			cin.ignore();
 
@@ -88,7 +90,7 @@ int main() {
 				cout << "> ";
 				cin.getline(strHelper, STRING_MAX_SIZE);
 				try {
-					if( helpers::checkCapturedValue(strHelper) == 0 ) {
+					if( helpers::handleCapturedValue(strHelper) ) {
 						exitWasCaptured = true;
 						break;
 					}
@@ -100,15 +102,17 @@ int main() {
 				strcpy(stringVals[i], strHelper);
 			}
 
-			// Combine (concat) all the strings into one string.
-			if( !exitWasCaptured ) {
-				strptr r = strTools::concatStr(stringVals[0], stringVals[1]);
-				r = strTools::concatStr(r.get(), stringVals[2]);
-				r = strTools::concatStr(( char[] ) "Concatenated string: ", r.get());
-				strcpy(extraMsg, r.get());
-			} else {
+			if( exitWasCaptured ) {
 				extraMsg = ( char[] ) "Operation was cancelled.";
+				break;
 			}
+
+			// Combine (concat) all the strings into one string.
+			strptr r = strTools::concatStr(stringVals[0], stringVals[1]);
+			r = strTools::concatStr(r.get(), stringVals[2]);
+			// Combine the final string with some extra output.
+			r = strTools::concatStr(( char[] ) "Concatenated string: ", r.get());
+			strcpy(extraMsg, r.get());
 
 			// Flush the stream.
 			cout.flush();
@@ -117,49 +121,55 @@ int main() {
 		case 3: { // Search for a character in a string.
 			std::array<str, 2> stringVals = { ( char[] ) "", ( char[] ) "" };
 
-			auto getNextLine = [&](const char s[], const uint64_t& i) {
-				cout << s;
-				cin.ignore();
+			auto getNextLine = [&](const uint64_t& i) {
+				cout << "> ";
 				cin.getline(stringVals[i], STRING_MAX_SIZE);
-				return helpers::checkCapturedValue(stringVals[i]);
+				return helpers::handleCapturedValue(stringVals[i]);
 				};
 
+			// Start position of the string.
 			int64_t startPos = 0;
+			bool exitWasCaptured = false;
 
-			cout << "Enter a string and then a substring you want to find\n"
+			cout << (char[] )
+				"Enter a string and then a substring you want to find\n"
 				"(type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n";
+			cin.ignore();
 
-			// Capture the first string.
-			getNextLine("> ", 0);
+			// Capture the first string. Since this can be anything,
+			// there's no need to handle the input.
+			if( getNextLine(0) ) {
+				break;
+			}
 
-			while( true ) {
-				// Capture the second string.
-				getNextLine("> ", 1);
+			// Capture the second string. Since this input must be handled,
+			// start a 'do while' loop.
+			do {
+				// Exit the loop if user used the /exit command.
+				if( getNextLine(1) ) {
+					exitWasCaptured = true;
+					break;
+				}
 
 				// Get the start position (i) by finding the first index.
 				startPos = strTools::findSubStr(stringVals[0], stringVals[1]);
 				if( startPos == -1 ) {
-					cout << "Substring not found.";
+					cout << "Substring not found in the original string!\n";
 					continue;
 				}
 				break;
+			} while( true );
+
+			// This exits the switch case.
+			if( exitWasCaptured ) {
+				break;
 			}
-			//if( !secondStringExit ) {
-			//	break; // The switch case.
-			//}
 
 			// Get the number of characters to extract after `startPos` (j).
 			uint64_t finalPos = strTools::len(stringVals[1]);
-
-			/* To avoid undefined behavior, first check if the arithmetic
-			 * values of the string are not equal to the maximum number of 64bits.*/
-			if( startPos - 1 == INT64_MAX ) {
-				startPos++;
-			}
-
-			// Extract the chracters.
-			strptr finalString = strTools::subStr(stringVals[0], startPos - 1, finalPos + 1);
+			// Extract the characters.
+			strptr finalString = strTools::subStr(stringVals[0], startPos, finalPos);
 
 			// Copy the final string to the extra message in the main menu.
 			strptr r = strTools::concatStr(( char[] ) "Extracted string: ", finalString.get());
@@ -174,6 +184,7 @@ int main() {
 		}
 		}; // switch ( selector )
 	} while( mainLoop );
+
 	cout << "Bye bye!" << endl;
 	return 0;
 }

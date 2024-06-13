@@ -4,10 +4,8 @@
 #include <iosfwd>
 #include <iostream>
 #include <limits>
-#include <string.h>
-
-#include "strtools.hh"
 #include <stdexcept>
+#include <string.h>
 
 using std::cout, std::cin, std::endl;
 
@@ -71,17 +69,17 @@ namespace helpers {
 	 *
 	 * @param s A pointer to a `char` object to store the captured input.
 	 *
-	 * @return  - 0 if the captured string is "/exit".
-	 *          - 1 if the captured string is not "/exit" and there were no errors during input.
+	 * @return  - true if the captured string is "/exit".
+	 *          - false if the captured string is not "/exit" and there were no errors during input.
 	 *
 	 * @throws std::runtime_error if there was an error while capturing the input or if the
 	 * captured string exceeds the maximum size.
 	 */
-	int32_t checkCapturedValue(const char* s) {
+	bool handleCapturedValue(const char* s) {
 		if( isCapturedValueInvalid() ) {
 			throw std::runtime_error("There was an error while handling the string.");
 		}
 		// Check if the user wants to exit.
-		return ( strcmp(s, "/exit") == 0 ) ? 0 : 1;
+		return ( strcmp(s, "/exit") == 0 ) ? true : false;
 	}
 }

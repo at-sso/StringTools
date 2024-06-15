@@ -6,18 +6,12 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string.h>
 
-namespace strTools {
-	// Equals to: `std::unique_ptr<char[]>`.
-	typedef std::unique_ptr<char[]> strptr;
-
-	// Equals to: `char*`.
-	typedef char* str;
-}
 
 // Utility tools for the strTools namespace.
 // If at any moment you need to use this ns, you are doing something wrong.
@@ -27,11 +21,11 @@ namespace __strToolsUtil {
 	 *
 	 * @param rule The condition to be checked.
 	 * @param msg The message to be included in the exception if the rule is violated.
-	 * @throws std::logic_error if the rule is false.
+	 * @throws std::out_of_range if the rule is false.
 	 */
 	static void checkErrors(bool rule, const char msg[]) {
 		if( rule == true ) {
-			throw std::logic_error(msg);
+			throw std::out_of_range(msg);
 		}
 	}
 
@@ -41,9 +35,9 @@ namespace __strToolsUtil {
 	 * @param src The source C-string.
 	 * @return A unique_ptr<char[]> containing a copy of the source string.
 	 */
-	static strTools::strptr makeUniqueStr(const strTools::str src) {
+	static std::unique_ptr<char[]> makeUniqueStr(const char* src) noexcept {
 		uint64_t srcLen = strlen(src);
-		strTools::strptr r = std::make_unique<char[]>(
+		std::unique_ptr<char[]> r = std::make_unique<char[]>(
 			static_cast<uint64_t>( srcLen ) + 1
 		);
 		strcpy(r.get(), src);
@@ -55,8 +49,8 @@ namespace __strToolsUtil {
 	 *
 	 * @param x The number to be fixed.
 	 */
-	static void fixIndex(uint64_t& x) {
-		if( x >= INT64_MAX or x == UINT64_MAX ) {
+	static void fixIndex(uint64_t& x) noexcept {
+		if( x > UINT64_MAX ) {  // Check for values exceeding the maximum unsigned 64-bit value
 			x = 0ULL;
 		}
 	}
@@ -67,13 +61,12 @@ namespace __strToolsUtil {
 	 * @param str The input string to be converted.
 	 * @return The lowercase version of the input string.
 	 */
-	static std::string toUndercase(const std::string& str) {
-		std::string lowerStr = str;
+	static std::string toUndercase(std::string str) noexcept {
 		std::transform(
-			lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
+			str.begin(), str.end(), str.begin(),
 			[](unsigned char c) { return std::tolower(c); }
 		);
-		return lowerStr;
+		return str;
 	}
 }
 
@@ -85,52 +78,44 @@ namespace strTools {
 	 * @param n The source C-string.
 	 * @return The length of the string.
 	 */
-	uint64_t len(const str n) {
+	uint64_t len(const char* n) {
 		return strlen(n);
 	}
 
 	/***
 	 * @brief Concatenates two C-strings into a new unique_ptr<char[]>.
 	 *
-	 * @param S1 The first source C-string.
-	 * @param S2 The second source C-string.
+	 * @param s1 The first source C-string.
+	 * @param s2 The second source C-string.
 	 * @return A unique_ptr<char[]> containing the concatenated string.
 	 */
-	strptr concatStr(const str S1, const str S2) {
-		auto s1 = __strToolsUtil::makeUniqueStr(S1);
-		auto s2 = __strToolsUtil::makeUniqueStr(S2);
-
-		if( !s1 || !s2 ) {
-			return nullptr;
-		}
-
+	std::unique_ptr<char[]> concatStr(const char* s1, const char* s2) noexcept {
 		// Calculate the length of the new concatenated string
-		auto lenS1 = len(S1);
-		auto lenS2 = len(S2);
+		auto lenS1 = len(s1);
+		auto lenS2 = len(s2);
 
 		// Allocate memory for the concatenated string
-		strptr r = std::make_unique<char[]>(
+		std::unique_ptr<char[]> r = std::make_unique<char[]>(
 			static_cast<uint64_t>( lenS1 ) + lenS2 + 1
 		);
 		// Copy the first string into the result
-		strcpy(r.get(), s1.get());
+		strcpy(r.get(), s1);
 		// Concatenate the second string
-		strcat(r.get(), s2.get());
+		strcat(r.get(), s2);
 		return r;
 	}
 
 	/***
 	 * @brief Extracts a substring from a string.
 	 *
-	 * @param S The source C-string.
+	 * @param s The source C-string.
 	 * @param i Position of the first character to include (index 0 = first character).
 	 * @param j Number of characters to extract from i.
 	 * @return A unique_ptr<char[]> containing the extracted substring.
-	 * @throws std::logic_error if indices are out of bounds.
+	 * @throws std::out_of_range if indices are out of bounds.
 	 */
-	strptr subStr(const str S, const uint64_t i, uint64_t j) {
-		auto s = __strToolsUtil::makeUniqueStr(S);
-		auto sLen = len(s.get());
+	std::unique_ptr<char[]> subStr(const char* s, const uint64_t i, uint64_t j) {
+		auto sLen = len(s);
 
 		__strToolsUtil::checkErrors(
 			i >= sLen || i + j > sLen,
@@ -138,8 +123,10 @@ namespace strTools {
 			"the length must not exceed the length of the original string.\n"
 		);
 
-		strptr r = std::make_unique<char[]>(static_cast<uint64_t>( j ) + 1);
-		strncpy(r.get(), s.get() + i, j);
+		std::unique_ptr<char[]> r = std::make_unique<char[]>(
+			static_cast<uint64_t>( j ) + 1
+		);
+		strncpy(r.get(), s + i, j);
 		r[j] = '\0';
 		return r;
 	}
@@ -151,17 +138,19 @@ namespace strTools {
 	 * @param s2 The source C-string to be inserted.
 	 * @param i The position at which to insert s2 into s1.
 	 * @return A unique_ptr<char[]> containing the resulting string.
-	 * @throws std::logic_error if the position is out of bounds.
+	 * @throws std::out_of_range if the position is out of bounds.
 	 */
-	strptr insertStr(const str s1, const str s2, const uint64_t i) {
+	std::unique_ptr<char[]> insertStr(const char* s1, const char* s2, const uint64_t i) {
 		__strToolsUtil::checkErrors(
 			1 <= i || i <= len(s1) + 1,
-			"The value of 'i' must be in the range of 1 to the length of C1 + 1"
+			"The value of 'i' must be in the range of 1 to the length of s1 + 1"
 		);
-		return concatStr(
-			concatStr(subStr(s1, 1, i - 1).get(), s1).get(),
-			subStr(s1, i, len(s1) - ( i - 1 )).get()
-		);
+
+		auto p1 = subStr(s1, 0, i - 1);
+		auto p2 = concatStr(p1.get(), s2);
+		auto p3 = subStr(s1, i - 1, len(s1) - ( i - 1 ));
+
+		return concatStr(p2.get(), p3.get());
 	}
 
 	/***
@@ -171,9 +160,9 @@ namespace strTools {
 	 * @param i The starting position of the substring to be removed.
 	 * @param j The length of the substring to be removed.
 	 * @return A unique_ptr<char[]> containing the resulting string.
-	 * @throws std::logic_error if indices are out of bounds.
+	 * @throws std::out_of_range if indices are out of bounds.
 	 */
-	strptr delSubStr(const str s, const uint64_t i, const uint64_t j) {
+	std::unique_ptr<char[]> delSubStr(const char* s, const uint64_t i, const uint64_t j) {
 		__strToolsUtil::checkErrors(
 			0 <= i && i < len(s),
 			"Position of `i` must be between 0 and the length of the string."
@@ -187,10 +176,10 @@ namespace strTools {
 			"Position i+j-1 must be between 0 and the length of the string."
 		);
 
-		return concatStr(
-			subStr(s, 1, i - 1).get(),
-			subStr(s, i + j, len(s) - ( i + j - 1 )).get()
-		);
+		auto p1 = subStr(s, 0, i - 1);
+		auto p2 = subStr(s, i + j - 1, len(s) - ( i + j - 1 ));
+
+		return concatStr(p1.get(), p2.get());
 	}
 
 	/***
@@ -198,35 +187,31 @@ namespace strTools {
 	 *
 	 * @param s The source C-string.
 	 * @param find The substring to find.
-	 * @return The index of the first occurrence of the substring, or -1 if not found.
+	 * @return The index of the first occurrence of the substring, or INT64_MAX if not found.
 	 */
-	int64_t findSubStr(const str s, const str find) {
-		// Check for invalid pointers.
-		if( s == nullptr || find == nullptr ) {
-			return -1;
-		}
-
+	int64_t findSubStr(const char* s, const char* find) {
 		auto lenS = len(s);
 		auto lenFind = len(find);
 
 		// Fix the strings because we don't really care about specifics.
-		const auto& underS = __strToolsUtil::toUndercase(s);
-		const auto& underFind = __strToolsUtil::toUndercase(find);
-		
+		const auto& undcS = __strToolsUtil::toUndercase(s);
+		const auto& undcFind = __strToolsUtil::toUndercase(find);
+
 		// The original string is empty or,
 		// If `find` is longer than `s`, it can't be found.
 		if( lenS == 0 or lenFind > lenS ) {
-			return -1;
+			return INT64_MAX;
 		}
 
 		if( lenFind == 0 ) {
 			return 0; // Empty substring is always found at the start.
 		}
 
+		// Get the index using bubble sorting (kind of)
 		for( uint64_t i = 0; i <= lenS - lenFind; ++i ) {
 			bool found = true;
 			for( uint64_t j = 0; j < lenFind; ++j ) {
-				if( underS[i + j] != underFind[j] ) {
+				if( undcS[i + j] != undcFind[j] ) {
 					found = false;
 					break;
 				}
@@ -236,7 +221,7 @@ namespace strTools {
 			}
 		}
 
-		return -1;
+		return INT64_MAX;
 	}
 
 	/***
@@ -246,15 +231,10 @@ namespace strTools {
 	 * @param sub1 The substring to be replaced.
 	 * @param sub2 The substring to replace with.
 	 * @return A unique_ptr<char[]> containing the resulting string.
-	 * @throws std::logic_error if any of the input pointers are invalid.
 	 */
-	strptr replaceStr(const str s, const str sub1, const str sub2) {
-		if( !s || !sub1 || !sub2 ) {
-			throw std::logic_error("Pointer value is invalid.");
-		}
-
-		auto getSubStr = [&](const str s, const str sub) {
-			const str pos = strstr(s, sub);
+	std::unique_ptr<char[]> replaceStr(const char* s, const char* sub1, const char* sub2) {
+		auto getSubStr = [&](const char* s, const char* sub) {
+			const char* pos = strstr(s, sub);
 			if( pos ) {
 				return (uint64_t) pos - (uint64_t) s;
 			}
@@ -262,9 +242,9 @@ namespace strTools {
 			};
 
 		uint64_t pos = getSubStr(s, sub1);
-		if( pos == -1 ) {
-			return __strToolsUtil::makeUniqueStr(s);
-		}
+		// Fix the index of pos JUST IN CASE.
+		// If the index is out of bounds this will simply return 0 (the first position).
+		__strToolsUtil::fixIndex(pos);
 
 		auto lenS = len(s);
 		auto lenSub1 = len(sub1);
@@ -274,7 +254,9 @@ namespace strTools {
 		uint64_t newLen = lenS - lenSub1 + lenSub2;
 
 		// Allocate memory for the new string
-		strptr r = std::make_unique<char[]>(static_cast<uint64_t>( newLen ) + 1);
+		std::unique_ptr<char[]> r = std::make_unique<char[]>(
+			static_cast<uint64_t>( newLen ) + 1
+		);
 
 		// Copy the part before sub1
 		strncpy(r.get(), s, pos);

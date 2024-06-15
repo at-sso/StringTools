@@ -11,14 +11,13 @@
 constexpr int16_t STRING_MAX_SIZE = 100;
 
 using std::cout, std::cin, std::endl;
-using strTools::str, strTools::strptr;
 
 int main() {
 	bool mainLoop = true;
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
-	str extraMsg = ( char[] ) ":D";
+	char* extraMsg = ( char[] ) ":D";
 
 	do {
 		helpers::clearScr();
@@ -52,7 +51,7 @@ int main() {
 			break;
 		}
 		case 1: { // Calculate the length of a string.
-			strptr strLen(new char[STRING_MAX_SIZE]);
+			std::unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
 
 			cout << ( char[] ) "Enter a string (type '/exit' to quit).\n";
 			cin.ignore();
@@ -76,8 +75,8 @@ int main() {
 			break;
 		}
 		case 2: { // Concatenate three strings requested.
-			std::array<str, 3> stringVals = { ( char[] ) "", ( char[] ) "", ( char[] ) "" };
-			str strHelper = ( char[] ) "";
+			std::array<char*, 3> stringVals = { ( char[] ) "", ( char[] ) "", ( char[] ) "" };
+			char* strHelper = ( char[] ) "";
 			bool exitWasCaptured = false;
 
 			cout << ( char[] )
@@ -108,7 +107,7 @@ int main() {
 			}
 
 			// Combine (concat) all the strings into one string.
-			strptr r = strTools::concatStr(stringVals[0], stringVals[1]);
+			auto r = strTools::concatStr(stringVals[0], stringVals[1]);
 			r = strTools::concatStr(r.get(), stringVals[2]);
 			// Combine the final string with some extra output.
 			r = strTools::concatStr(( char[] ) "Concatenated string: ", r.get());
@@ -119,8 +118,9 @@ int main() {
 			break;
 		}
 		case 3: { // Search for a character in a string.
-			std::array<str, 2> stringVals = { ( char[] ) "", ( char[] ) "" };
+			std::array<char*, 2> stringVals = { ( char[] ) "", ( char[] ) "" };
 
+			// This will return true if the input is '/exit'.
 			auto getNextLine = [&](const uint64_t& i) {
 				cout << "> ";
 				cin.getline(stringVals[i], STRING_MAX_SIZE);
@@ -169,10 +169,10 @@ int main() {
 			// Get the number of characters to extract after `startPos` (j).
 			uint64_t finalPos = strTools::len(stringVals[1]);
 			// Extract the characters.
-			strptr finalString = strTools::subStr(stringVals[0], startPos, finalPos);
+			auto finalString = strTools::subStr(stringVals[0], startPos, finalPos);
 
 			// Copy the final string to the extra message in the main menu.
-			strptr r = strTools::concatStr(( char[] ) "Extracted string: ", finalString.get());
+			auto r = strTools::concatStr(( char[] ) "Extracted string: ", finalString.get());
 			strcpy(extraMsg, r.get());
 
 			// Flush the stream.

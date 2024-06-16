@@ -1,10 +1,10 @@
 #include <array>
-#include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <istream>
 #include <memory>
+#include <new>
 #include <random>
-#include <stdexcept>
 #include <string.h>
 
 #include "src/helpers.hh"

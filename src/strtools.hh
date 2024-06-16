@@ -16,7 +16,7 @@
 // Utility tools for the strTools namespace.
 // If at any moment you need to use this ns, you are doing something wrong.
 namespace __strToolsUtil {
-	/***
+	/**!
 	 * @brief Checks for invalid inputs and throws an exception if the rule is violated.
 	 *
 	 * @param rule The condition to be checked.
@@ -29,7 +29,7 @@ namespace __strToolsUtil {
 		}
 	}
 
-	/***
+	/**!
 	 * @brief Creates a std::unique_ptr<char[]> from a const char* source.
 	 *
 	 * @param src The source C-string.
@@ -44,7 +44,7 @@ namespace __strToolsUtil {
 		return r;
 	}
 
-	/***
+	/**!
 	 * @brief Fixes the index of a number.
 	 *
 	 * @param x The number to be fixed.
@@ -55,13 +55,13 @@ namespace __strToolsUtil {
 		}
 	}
 
-	/***
+	/**!
 	 * @brief Converts a string to lowercase.
 	 *
 	 * @param str The input string to be converted.
 	 * @return The lowercase version of the input string.
 	 */
-	static std::string toUndercase(std::string str) noexcept {
+	static std::string toLowercase(std::string str) noexcept {
 		std::transform(
 			str.begin(), str.end(), str.begin(),
 			[](unsigned char c) { return std::tolower(c); }
@@ -72,7 +72,7 @@ namespace __strToolsUtil {
 
 // String tools.
 namespace strTools {
-	/***
+	/**!
 	 * @brief Returns the length of the C-string.
 	 *
 	 * @param n The source C-string.
@@ -82,7 +82,7 @@ namespace strTools {
 		return strlen(n);
 	}
 
-	/***
+	/**!
 	 * @brief Concatenates two C-strings into a new unique_ptr<char[]>.
 	 *
 	 * @param s1 The first source C-string.
@@ -105,7 +105,7 @@ namespace strTools {
 		return r;
 	}
 
-	/***
+	/**!
 	 * @brief Extracts a substring from a string.
 	 *
 	 * @param s The source C-string.
@@ -131,7 +131,7 @@ namespace strTools {
 		return r;
 	}
 
-	/***
+	/**!
 	 * @brief Inserts one string into another at the specified position.
 	 *
 	 * @param s1 The destination C-string.
@@ -153,7 +153,7 @@ namespace strTools {
 		return concatStr(p2.get(), p3.get());
 	}
 
-	/***
+	/**!
 	 * @brief Removes a substring from a string.
 	 *
 	 * @param s The source C-string.
@@ -182,7 +182,7 @@ namespace strTools {
 		return concatStr(p1.get(), p2.get());
 	}
 
-	/***
+	/**!
 	 * @brief Finds the first occurrence of a substring within a string.
 	 *
 	 * @param s The source C-string.
@@ -194,12 +194,12 @@ namespace strTools {
 		auto lenFind = len(find);
 
 		// Fix the strings because we don't really care about specifics.
-		const auto& undcS = __strToolsUtil::toUndercase(s);
-		const auto& undcFind = __strToolsUtil::toUndercase(find);
+		const auto& undcS = __strToolsUtil::toLowercase(s);
+		const auto& undcFind = __strToolsUtil::toLowercase(find);
 
 		// The original string is empty or,
 		// If `find` is longer than `s`, it can't be found.
-		if( lenS == 0 or lenFind > lenS ) {
+		if( lenS == 0 || lenFind > lenS ) {
 			return INT64_MAX;
 		}
 
@@ -224,7 +224,7 @@ namespace strTools {
 		return INT64_MAX;
 	}
 
-	/***
+	/**!
 	 * @brief Replaces the first occurrence of a substring with another substring.
 	 *
 	 * @param s The source C-string.

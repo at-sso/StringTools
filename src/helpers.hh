@@ -4,13 +4,12 @@
 #include <iosfwd>
 #include <iostream>
 #include <limits>
-#include <stdexcept>
 #include <string.h>
 
-using std::cout, std::cin, std::endl;
+using std::cout, std::cin, std::cerr, std::endl;
 
 namespace helpers {
-	/***
+	/**!
 	 * @brief Checks if the captured value from standard input is invalid.
 	 *
 	 * This function checks if the last input operation on `cin` failed
@@ -31,7 +30,7 @@ namespace helpers {
 		return false;
 	}
 
-	/***
+	/**!
 	 * @brief Checks if a value is outside the specified bounds.
 	 *
 	 * This function determines if the given `value` is less than `x`
@@ -44,10 +43,10 @@ namespace helpers {
 	 * @return `true` if the value is outside the bounds, `false` otherwise.
 	 */
 	bool isOutOfBounds(const int32_t& value, const int32_t& x, const int32_t& y) {
-		return ( value < x or value > y );
+		return ( value < x || value > y );
 	}
 
-	/***
+	/**!
 	 * @brief Clears the console screen.
 	 *
 	 * This function sends escape sequences to the console to clear the screen
@@ -59,27 +58,41 @@ namespace helpers {
 		cout.flush();
 	}
 
-	/***
-	 * @brief Checks captured user input and handles potential errors.
+	/**!
+	 * @brief Handles user input, checks for exit command, and handles overflow.
 	 *
-	 * This function first calls `isCapturedValueInvalid` to check if there were any errors
-	 * during the input process. If `isCapturedValueInvalid` returns `true`, it throws a
-	 * `std::runtime_error` with a descriptive message. Otherwise, it checks if the captured
-	 * string is equal to "/exit".
+	 * This function reads user input from the standard input stream until a newline
+	 * character is encountered or the buffer is full. It checks if the user input
+	 * is the exit command "/exit". If the input exceeds the buffer size, it truncates
+	 * the input and clears the remaining characters in the input stream.
 	 *
-	 * @param s A pointer to a `char` object to store the captured input.
-	 *
-	 * @return  - true if the captured string is "/exit".
-	 *          - false if the captured string is not "/exit" and there were no errors during input.
-	 *
-	 * @throws std::runtime_error if there was an error while capturing the input or if the
-	 * captured string exceeds the maximum size.
+	 * @param input Pointer to the character array where the input will be stored.
+	 * @param size The size of the input buffer.
+	 * @return true if the input is the exit command "/exit".
+	 * @return false otherwise.
 	 */
-	bool handleCapturedValue(const char* s) {
-		if( isCapturedValueInvalid() ) {
-			throw std::runtime_error("There was an error while handling the string.");
+	bool userInputHandler(char* input, int32_t size) {
+		char ch = 0;
+		int32_t chCount = 0;
+
+		// Check the input of the user one by one.
+		while( ( ch = cin.get() ) != '\n' && chCount < size - 1 ) {
+			input[chCount++] = ch;
 		}
+		input[chCount] = '\0';  // Null-terminate the string
+
 		// Check if the user wants to exit.
-		return ( strcmp(s, "/exit") == 0 ) ? true : false;
+		if( strcmp(input, "/exit") == 0 ) {
+			return true;
+		}
+
+		// Handle overflow if input exceeds maximum length.
+		if( chCount == size - 1 ) {
+			// Clear remaining input.
+			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			cerr << "Warning: Input truncated to " << size - 1 << " characters.\n";
+		}
+
+		return false;
 	}
 }

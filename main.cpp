@@ -1,44 +1,51 @@
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <stdexcept>
 #include <string.h>
 
 #include "src/helpers.hh"
 #include "src/strtools.hh"
 
-constexpr int16_t STRING_MAX_SIZE = 100;
+// String max input size.
+#define STRING_MAX_SIZE 256
+// Array of characters.
+#define CHARARR (char[])
+// Array of characters with an empty array.
+#define EMPTY_CHARARR (char[]) ""
 
-using std::cout, std::cin, std::endl;
+using std::cout, std::cin, std::endl, std::flush;
 
 int main() {
 	bool mainLoop = true;
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
-	char* extraMsg = ( char[] ) ":D";
+	char* extraMsg = CHARARR ":D";
 
 	do {
 		helpers::clearScr();
-		cout << ( char[] )
+		cout << CHARARR
 			"1. Calculate the length of a string.\n"
 			"2. Concatenate three strings requested.\n"
 			"3. Search for a character in a string.\n"
 			"4. Generate a substring from a string.\n"
 			"0. Exit.\n"
-			<< extraMsg << "\n\n> ";
+			<< extraMsg << "\n\n> " << flush;
 		cin >> selector;
 
 		// Check if the captured value is invalid.
 		if( helpers::isCapturedValueInvalid() ) {
-			extraMsg = ( char[] ) "Value is invalid!";
+			extraMsg = CHARARR "Value is invalid!";
 			continue;
 		}
 
 		// Check if the captured value is out of bounds.
 		if( helpers::isOutOfBounds(selector, 0, 4) ) {
-			extraMsg = ( char[] ) "Value is out of bounds!";
+			extraMsg = CHARARR "Value is out of bounds!";
 			continue;
 		}
 
@@ -46,26 +53,27 @@ int main() {
 		cout.flush();
 
 		switch( selector ) {
-		case 0: { // Exit
+		case 0: // Exit
+		{
 			mainLoop = false;
 			break;
-		}
-		case 1: { // Calculate the length of a string.
+		} // case 0
+		case 1: // Calculate the length of a string.
+		{
 			std::unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
 
-			cout << ( char[] ) "Enter a string (type '/exit' to quit).\n";
+			cout << CHARARR "Enter a string (type '/exit' to quit).\n" << flush;
 			cin.ignore();
 
 			// Start the operation.
 			do {
-				cout << "> ";
-				// Captured user input values.
-				cin.getline(strLen.get(), STRING_MAX_SIZE);
-				if( helpers::handleCapturedValue(strLen.get()) ) {
+				cout << CHARARR "> ";
+				// Call the user input handler.
+				if( helpers::userInputHandler(strLen.get(), STRING_MAX_SIZE) ) {
 					break;
 				}
 				// Show the results.
-				cout << 
+				cout << CHARARR
 					"The length of '" << strLen.get() << "' is: "
 					<< strTools::len(strLen.get()) << "\n";
 			} while( true );
@@ -73,36 +81,32 @@ int main() {
 			// Flush the stream.
 			cout.flush();
 			break;
-		}
-		case 2: { // Concatenate three strings requested.
-			std::array<char*, 3> stringVals = { ( char[] ) "", ( char[] ) "", ( char[] ) "" };
-			char* strHelper = ( char[] ) "";
+		} // case 1
+		case 2: // Concatenate three strings requested.
+		{
+			// Array values to be modified by the user.
+			std::array<char*, 3> stringVals = { EMPTY_CHARARR, EMPTY_CHARARR, EMPTY_CHARARR };
+			// This helper allows the array values to be modified easily.
+			char* strHelper = EMPTY_CHARARR;
 			bool exitWasCaptured = false;
 
-			cout << ( char[] )
+			cout << CHARARR
 				"Enter 3 strings (type '/exit' at any moment to quit).\n"
-				"The result will be shown after this operation ends.\n\n";
+				"The result will be shown after this operation ends.\n\n" << flush;
 			cin.ignore();
 
 			// Start the operation.
 			for( int16_t i = 0; i < 3; ++i ) {
 				cout << "> ";
-				cin.getline(strHelper, STRING_MAX_SIZE);
-				try {
-					if( helpers::handleCapturedValue(strHelper) ) {
-						exitWasCaptured = true;
-						break;
-					}
-				} catch( const std::runtime_error& e ) {
-					std::cerr << e.what() << endl;
-					--i; // Retry the same iteration
-					continue;
+				if( helpers::userInputHandler(strHelper, STRING_MAX_SIZE) ) {
+					exitWasCaptured = true;
+					break;
 				}
 				strcpy(stringVals[i], strHelper);
 			}
 
 			if( exitWasCaptured ) {
-				extraMsg = ( char[] ) "Operation was cancelled.";
+				extraMsg = CHARARR "Operation was cancelled.";
 				break;
 			}
 
@@ -110,31 +114,31 @@ int main() {
 			auto r = strTools::concatStr(stringVals[0], stringVals[1]);
 			r = strTools::concatStr(r.get(), stringVals[2]);
 			// Combine the final string with some extra output.
-			r = strTools::concatStr(( char[] ) "Concatenated string: ", r.get());
+			r = strTools::concatStr(CHARARR "Concatenated string: ", r.get());
 			strcpy(extraMsg, r.get());
 
 			// Flush the stream.
 			cout.flush();
 			break;
-		}
-		case 3: { // Search for a character in a string.
-			std::array<char*, 2> stringVals = { ( char[] ) "", ( char[] ) "" };
+		} // case 2
+		case 3: // Search for a character in a string.
+		{
+			std::array<char*, 2> stringVals = { EMPTY_CHARARR, EMPTY_CHARARR };
 
 			// This will return true if the input is '/exit'.
-			auto getNextLine = [&](const uint64_t& i) {
-				cout << "> ";
-				cin.getline(stringVals[i], STRING_MAX_SIZE);
-				return helpers::handleCapturedValue(stringVals[i]);
+			auto getNextLine = [&stringVals](const uint64_t& i) {
+				cout << CHARARR "> ";
+				return helpers::userInputHandler(stringVals[i], STRING_MAX_SIZE);
 				};
 
 			// Start position of the string.
 			int64_t startPos = 0;
 			bool exitWasCaptured = false;
 
-			cout << (char[] )
+			cout << CHARARR
 				"Enter a string and then a substring you want to find\n"
 				"(type '/exit' at any moment to quit).\n"
-				"The result will be shown after this operation ends.\n\n";
+				"The result will be shown after this operation ends.\n\n" << flush;
 			cin.ignore();
 
 			// Capture the first string. Since this can be anything,
@@ -155,7 +159,7 @@ int main() {
 				// Get the start position (i) by finding the first index.
 				startPos = strTools::findSubStr(stringVals[0], stringVals[1]);
 				if( startPos == -1 ) {
-					cout << "Substring not found in the original string!\n";
+					cout << CHARARR "Substring not found in the original string!\n";
 					continue;
 				}
 				break;
@@ -172,16 +176,60 @@ int main() {
 			auto finalString = strTools::subStr(stringVals[0], startPos, finalPos);
 
 			// Copy the final string to the extra message in the main menu.
-			auto r = strTools::concatStr(( char[] ) "Extracted string: ", finalString.get());
+			auto r = strTools::concatStr(CHARARR "Extracted string: ", finalString.get());
 			strcpy(extraMsg, r.get());
 
 			// Flush the stream.
 			cout.flush();
 			break;
-		}
-		case 4: { // Generate a substring from a string.
+		} // case 3
+		case 4: // Generate a substring from a string.
+		{
+			// Seed the random number engine with the current time.
+			std::random_device rd;
+			std::mt19937_64 gen(rd());
+			// Define a lambda for random number generation within a specified range.
+			auto getRand = [&gen](int64_t lower, int64_t upper) {
+				std::uniform_int_distribution<uint64_t> distro(lower, upper);
+				return distro(gen);
+				};
+
+			char* originalString = EMPTY_CHARARR;
+			std::unique_ptr<char[]> subStrFromOriginal(new char[STRING_MAX_SIZE]);
+			uint64_t strLen = 0ull, strLowIndex = 0ull, strUppIndex = 0ull;
+
+			cout << CHARARR
+				"Enter a string (type '/exit' at any moment to quit).\n"
+				"The substring will be generated randomly.\n" << flush;
+			cin.ignore();
+
+			do {
+				cout << CHARARR "> ";
+				if( !helpers::userInputHandler(originalString, STRING_MAX_SIZE) ) {
+					strLen = strTools::len(originalString);
+
+					// Ensure valid indices.
+					// This will never stop until there are valid indices.
+					do {
+						strLowIndex = getRand(0, strLen);
+						strUppIndex = getRand(strLowIndex + 1, strLen + 1);
+					} while( strLowIndex >= strUppIndex || strUppIndex > strLen );
+
+					// Once the values are valid, get the substring.
+					subStrFromOriginal = strTools::subStr(
+						originalString, strLowIndex, strUppIndex - strLowIndex
+					);
+					cout << CHARARR
+						"Extracted substring: '" << subStrFromOriginal.get() << "'\n" << flush;
+				} else {
+					break;
+				}
+			} while( true );
+
+			// Flush the stream (just in case).
+			cout.flush();
 			break;
-		}
+		} // case 4
 		}; // switch ( selector )
 	} while( mainLoop );
 

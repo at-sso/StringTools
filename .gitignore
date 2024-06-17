@@ -5,7 +5,8 @@
 **/todo.*
 !license
 docs/**
-!docs/Doxyfile
+!docs/latex
+!docs/latex/refman.pdf
 **/.vs/**
 **/.vscode/*.*
 !*.md

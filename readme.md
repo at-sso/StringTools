@@ -194,8 +194,8 @@ The `strtools` namespace provides the following functions for string manipulatio
 
 ## Full Documentation
 
-For more detailed documentation on the code, including function descriptions and usage, refer to the Doxygen documentation available [`here`](./docs/html/index.html).
+For more detailed documentation on the code, including function descriptions and usage, refer to the Doxygen documentation available [`here`](./docs/latex/refman.pdf).
 
 ## License
 
-The `strTools` library is licensed under the GNU General Public License v3.0. For more details, see the [GNU General Public License v3.0](license) file.
+The `strTools` library is licensed under the GNU General Public License v3.0. For more details, see the GNU General Public License v3.0 file.

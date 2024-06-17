@@ -194,7 +194,7 @@ The `strtools` namespace provides the following functions for string manipulatio
 
 ## Full Documentation
 
-For more detailed documentation on the code, including function descriptions and usage, refer to the Doxygen documentation available [`here`](./docs/latex/refman.pdf).
+For more detailed documentation on the code, including function descriptions and usage, refer to the Doxygen documentation available [`here`](https://github.com/at-sso/StringTools/blob/master/docs/latex/refman.pdf).
 
 ## License
 

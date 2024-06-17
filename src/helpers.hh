@@ -1,3 +1,14 @@
+/**
+ * @file helpers.hh
+ * @author Ian Hylton
+ * @brief Utilities for input handling and console management.
+ * @version 1.0.0
+ * @date 2024-06-16
+ *
+ * @copyright Copyright (c) zperk 2024
+ *
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -8,8 +19,16 @@
 
 using std::cout, std::cin, std::cerr, std::endl;
 
+/**
+ * @namespace helpers
+ * @brief Utility functions for input handling and console management.
+ *
+ * This namespace provides a set of utility functions for handling standard input
+ * errors, checking bounds of values, clearing the console screen, and managing user
+ * input with overflow and exit command handling.
+ */
 namespace helpers {
-	/**!
+	/**
 	 * @brief Checks if the captured value from standard input is invalid.
 	 *
 	 * This function checks if the last input operation on `cin` failed
@@ -18,6 +37,15 @@ namespace helpers {
 	 *   - Ignores the remaining invalid input in the stream up to the next newline.
 	 *
 	 * @return `true` if the captured value was invalid, `false` otherwise.
+	 *
+	 * @note Example usage:
+	 * @code
+	 * int value;
+	 * std::cin >> value;
+	 * if (helpers::isCapturedValueInvalid()) {
+	 *     std::cout << "Invalid input. Please enter a numeric value.\n";
+	 * }
+	 * @endcode
 	 */
 	bool isCapturedValueInvalid() {
 		if( cin.fail() ) {
@@ -30,7 +58,7 @@ namespace helpers {
 		return false;
 	}
 
-	/**!
+	/**
 	 * @brief Checks if a value is outside the specified bounds.
 	 *
 	 * This function determines if the given `value` is less than `x`
@@ -41,24 +69,42 @@ namespace helpers {
 	 * @param y The upper bound.
 	 *
 	 * @return `true` if the value is outside the bounds, `false` otherwise.
+	 *
+	 * @note Example usage:
+	 * @code
+	 * int32_t value = 10;
+	 * int32_t lowerBound = 5;
+	 * int32_t upperBound = 15;
+	 * if (helpers::isOutOfBounds(value, lowerBound, upperBound)) {
+	 *     std::cout << "Value is out of bounds.\n";
+	 * } else {
+	 *     std::cout << "Value is within bounds.\n";
+	 * }
+	 * @endcode
 	 */
 	bool isOutOfBounds(const int32_t& value, const int32_t& x, const int32_t& y) {
 		return ( value < x || value > y );
 	}
 
-	/**!
-	 * @brief Clears the console screen.
+	/**
+	 * @brief "Clears" the console screen.
 	 *
 	 * This function sends escape sequences to the console to clear the screen
 	 * and move the cursor to the top-left corner. This functionality is platform-specific
 	 * and might not work on all terminals.
+	 *
+	 * @note Example usage:
+	 * @code
+	 * helpers::clearScr();
+	 * std::cout << "Screen cleared.\n";
+	 * @endcode
 	 */
 	void clearScr() {
 		cout << "\x1B[2J\x1B[H";
 		cout.flush();
 	}
 
-	/**!
+	/**
 	 * @brief Handles user input, checks for exit command, and handles overflow.
 	 *
 	 * This function reads user input from the standard input stream until a newline
@@ -68,8 +114,20 @@ namespace helpers {
 	 *
 	 * @param input Pointer to the character array where the input will be stored.
 	 * @param size The size of the input buffer.
-	 * @return true if the input is the exit command "/exit".
-	 * @return false otherwise.
+	 * @return `true` if the input is the exit command "/exit".
+	 * @return `false` otherwise.
+	 *
+	 * @note Example usage:
+	 * @code
+	 * const int32_t bufferSize = 100;
+	 * char input[bufferSize];
+	 * bool exit = helpers::userInputHandler(input, bufferSize);
+	 * if (exit) {
+	 *     std::cout << "Exit command received.\n";
+	 * } else {
+	 *     std::cout << "You entered: " << input << "\n";
+	 * }
+	 * @endcode
 	 */
 	bool userInputHandler(char* input, int32_t size) {
 		char ch = 0;

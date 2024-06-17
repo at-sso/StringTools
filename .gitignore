@@ -4,11 +4,10 @@
 !**/test.*
 **/todo.*
 !license
+docs/**
+!docs/Doxyfile
 **/.vs/**
 **/.vscode/*.*
-**/c_cpp_properties.json
-!**/launch.json
-!**/settings.json
 !*.md
 *.db
 *.exe

@@ -137,6 +137,8 @@ auto result = strTools::replaceStr(myString, sub1, sub2);
 
 ## Main function Usage
 
+NOTE: The `main` function requires C++20. If you are using C++17, this section will not compile.
+
 ### Menu Options
 
 1. **Calculate the Length of a String:**

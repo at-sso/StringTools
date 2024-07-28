@@ -385,7 +385,7 @@ namespace strTools {
 			if( pos ) {
 				return (uint64_t) pos - (uint64_t) s;
 			}
-			return 0ULL;
+			return (uint64_t) 0;
 			};
 
 		uint64_t pos = getSubStr(s, sub1);

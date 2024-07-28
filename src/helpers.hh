@@ -2,8 +2,8 @@
  * @file helpers.hh
  * @author Ian Hylton
  * @brief Utilities for input handling and console management.
- * @version 1.0.0
- * @date 2024-06-16
+ * @version 1.0.1
+ * @date 2024-07-28
  *
  * @copyright Copyright (c) zperk 2024
  *
@@ -56,34 +56,6 @@ namespace helpers {
 			return true;
 		}
 		return false;
-	}
-
-	/**
-	 * @brief Checks if a value is outside the specified bounds.
-	 *
-	 * This function determines if the given `value` is less than `x`
-	 * or greater than `y`.
-	 *
-	 * @param value The value to check.
-	 * @param x The lower bound.
-	 * @param y The upper bound.
-	 *
-	 * @return `true` if the value is outside the bounds, `false` otherwise.
-	 *
-	 * @note Example usage:
-	 * @code
-	 * int32_t value = 10;
-	 * int32_t lowerBound = 5;
-	 * int32_t upperBound = 15;
-	 * if (helpers::isOutOfBounds(value, lowerBound, upperBound)) {
-	 *     std::cout << "Value is out of bounds.\n";
-	 * } else {
-	 *     std::cout << "Value is within bounds.\n";
-	 * }
-	 * @endcode
-	 */
-	bool isOutOfBounds(const int32_t& value, const int32_t& x, const int32_t& y) {
-		return ( value < x || value > y );
 	}
 
 	/**

@@ -60,6 +60,12 @@ To use the `strTools` library, include the `strtools.hh` header in your C++ proj
 
 Ensure that your project is set up to find the header file in its include path.
 
+You can also try running the test program using:
+
+```bash
+g++ -std=c++20 -I src main.cpp -o main.exe && ./main.exe
+```
+
 ## Namespace Usage
 
 ### Length Calculation

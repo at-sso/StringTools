@@ -23,5 +23,8 @@
     <ClInclude Include="src\strtools.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\strutil.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

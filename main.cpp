@@ -9,8 +9,8 @@
  *
  */
 
-#include "src/helpers.hh"
 #include "src/strtools.hh"
+#include "src/strutil.hh"
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -50,7 +50,7 @@ using std::string;
  *
  *   @code
  *   do {
- *       helpers::clearScr();
+ *       strUtil::clearScr();
  *       cout <<
  *           "1. Calculate the length of a string.\n"
  *           "2. Concatenate three strings requested.\n"
@@ -66,11 +66,11 @@ using std::string;
  *   - Out-of-Bounds Input: If the input is not within the range [0, 4], an error message is shown.
  *
  *   @code
- *   if( helpers::isCapturedValueInvalid() ) {
+ *   if( strUtil::isCapturedValueInvalid() ) {
  *       extraMsg = "Value is invalid!";
  *       continue;
  *   }
- *   if( helpers::isOutOfBounds(selector, 0, 4) ) {
+ *   if( strUtil::isOutOfBounds(selector, 0, 4) ) {
  *       extraMsg = "Value is out of bounds!";
  *       continue;
  *   }
@@ -149,7 +149,7 @@ int main() {
 	string extraMsg = ":D";
 
 	do {
-		helpers::clearScr();
+		strUtil::clearScr();
 		cout <<
 			"1. Calculate the length of a string.\n"
 			"2. Concatenate three strings requested.\n"
@@ -160,12 +160,11 @@ int main() {
 		cin >> selector;
 
 		// Check if the captured value is invalid.
-		if( helpers::isCapturedValueInvalid() ) {
+		if( strUtil::isCapturedValueInvalid() ) {
 			extraMsg = "Value is invalid!";
 			continue;
 		}
 
-		// If everything is correct, flush the stream and continue.
 		cout.flush();
 
 		switch( selector ) {
@@ -182,13 +181,13 @@ int main() {
 			while( true ) {
 				cout << "> ";
 				// Call the user input handler.
-				if( helpers::userInputHandler(strLen.get(), STRING_MAX_SIZE) ) {
+				if( strUtil::userInputHandler(strLen.get(), STRING_MAX_SIZE) ) {
 					break;
 				}
 				// Show the results.
 				cout <<
 					"The length of '" << strLen.get() << "' is: "
-					<< strTools::len(strLen.get()) << "\n";
+					<< strlen(strLen.get()) << "\n";
 			};
 
 			// Flush the stream.
@@ -211,7 +210,7 @@ int main() {
 			// Start the operation.
 			for( int16_t i = 0; i < 3; ++i ) {
 				cout << "> ";
-				if( helpers::userInputHandler(strHelper, STRING_MAX_SIZE) ) {
+				if( strUtil::userInputHandler(strHelper, STRING_MAX_SIZE) ) {
 					exitWasCaptured = true;
 					break;
 				}
@@ -241,7 +240,7 @@ int main() {
 			// This will return true if the input is '/exit'.
 			auto getNextLine = [&stringVals](const uint64_t& i) {
 				cout << "> ";
-				return helpers::userInputHandler(stringVals[i], STRING_MAX_SIZE);
+				return strUtil::userInputHandler(stringVals[i], STRING_MAX_SIZE);
 				};
 
 			// Start position of the string.
@@ -284,7 +283,7 @@ int main() {
 			}
 
 			// Get the number of characters to extract after `startPos` (j).
-			uint64_t finalPos = strTools::len(stringVals[1]);
+			uint64_t finalPos = strlen(stringVals[1]);
 			// Extract the characters.
 			auto finalString = strTools::subStr(stringVals[0], startPos, finalPos);
 
@@ -318,8 +317,8 @@ int main() {
 
 			while( true ) {
 				cout << "> ";
-				if( !helpers::userInputHandler(originalString, STRING_MAX_SIZE) ) {
-					strLen = strTools::len(originalString);
+				if( !strUtil::userInputHandler(originalString, STRING_MAX_SIZE) ) {
+					strLen = strlen(originalString);
 
 					// Ensure valid indices.
 					// This will never stop until there are valid indices.

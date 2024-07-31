@@ -11,6 +11,7 @@
 
 #include "src/strtools.hh"
 #include "src/strutil.hh"
+#include "src/strutilhelper.hh"
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -143,6 +144,7 @@ using std::string;
  */
 int main() {
 	bool mainLoop = true;
+	bool showStatus = false;
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
@@ -156,6 +158,7 @@ int main() {
 			"3. Search for a character in a string.\n"
 			"4. Generate a substring from a string.\n"
 			"0. Exit.\n"
+			<< ( showStatus ? strUtil::strUtilStatus + '\n' : "" )
 			<< extraMsg << "\n\n> " << flush;
 		cin >> selector;
 
@@ -170,6 +173,7 @@ int main() {
 		switch( selector ) {
 		default: extraMsg = "Value is out of bounds!"; break;
 		case 0: mainLoop = false; break;
+		case -1: showStatus = !showStatus; break;
 		case 1: // Calculate the length of a string.
 		{
 			std::unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
@@ -205,7 +209,6 @@ int main() {
 			cout <<
 				"Enter 3 strings (type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n" << flush;
-			cin.ignore();
 
 			// Start the operation.
 			for( int16_t i = 0; i < 3; ++i ) {
@@ -251,7 +254,6 @@ int main() {
 				"Enter a string and then a substring you want to find\n"
 				"(type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n" << flush;
-			cin.ignore();
 
 			// Capture the first string. Since this can be anything,
 			// there's no need to handle the input.
@@ -260,7 +262,7 @@ int main() {
 			}
 
 			// Capture the second string. Since this input must be handled,
-			// start a 'do while' loop.
+			// start a 'while' loop.
 			while( true ) {
 				// Exit the loop if user used the /exit command.
 				if( getNextLine(1) ) {
@@ -313,7 +315,6 @@ int main() {
 			cout <<
 				"Enter a string (type '/exit' at any moment to quit).\n"
 				"The substring will be generated randomly.\n" << flush;
-			cin.ignore();
 
 			while( true ) {
 				cout << "> ";

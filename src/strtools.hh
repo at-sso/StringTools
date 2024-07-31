@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include "./strutil.hh"
+#include "strutil.hh"
+#include "strutilhelper.hh"
 #include <cstdint>
 #include <cstring>
 #include <memory>

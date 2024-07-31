@@ -2,109 +2,28 @@
  * @file strutil.hh (former helpers.hh)
  * @author Ian Hylton
  * @brief Utilities for input handling and console management.
- * @version 1.0.2
+ * @version 1.0.3
  * @date 2024-07-30
  *
  * @copyright Copyright (c) zperk 2024
  *
  */
 
-// This is (or must be) the first file to be linked after compilation.
 
 #pragma once
 
+#include "strutilhelper.hh"
 #include <cctype>
 #include <cstdint>
-#include <iosfwd>
+#include <exception>
 #include <iostream>
-#include <limits>
 #include <memory>
-#include <stdexcept>
+#include <string>
 #include <string.h>
 
-/**
- * @brief Ignores invalid input from standard input.
- *
- * This function clears the error flags from `cin` and ignores remaining invalid input
- * up to the next newline. It is typically used after a failed input operation.
- *
- * @return `true` if the input was invalid, `false` otherwise.
- *
- * @note Example usage:
- * @code
- * int value;
- * std::cin >> value;
- * if (__ignoreCapturedValue('\n')) {
- *     std::cout << "Invalid input. Please enter a valid value.\n";
- * }
- * @endcode
- */
-#define __ignoreCapturedValue(s) \
-cin.ignore(std::numeric_limits<std::streamsize>::max(), s)
-
-/**
- * @brief Checks for invalid inputs and throws an exception if the rule is violated.
- *
- * This function evaluates a given condition (rule) and throws a `std::out_of_range`
- * exception with a specified message if the condition is false. It is commonly used
- * to enforce constraints and validate inputs within other functions.
- *
- * @param rule The condition to be checked. If this condition evaluates to false, an exception is thrown.
- * @param msg The message to be included in the exception if the rule is violated.
- * @throws std::out_of_range if the rule is false.
- *
- * @note Example usage:
- * @code
- * __checkLogicErrors(index < arraySize, "Index out of range");
- * @endcode
- */
-#define __checkLogicErrors(rule, msg) \
-if( rule )                            \
-throw std::out_of_range(msg)
-
-/**
- * @brief Creates a smart pointer to a dynamically allocated array of characters.
- *
- * This macro defines a variable `smartStr` as a smart pointer to a dynamically allocated
- * array of characters with a specified length. The pointer is created using the provided
- * smart pointer creation function (e.g., `std::make_shared` or `std::make_unique`).
- * It is useful for managing the lifetime of dynamically allocated character arrays,
- * ensuring proper deallocation.
- *
- * @param len The length of the character array to be allocated.
- * @param _make The smart pointer creation function (e.g., `std::make_shared` or `std::make_unique`).
- *
- * @note Example usage:
- * @code
- * size_t size;
- * smart_ptr __makeSmartStringPtr(size, std::make_shared);
- * std::cout << smartStr.get();
- * @endcode
- */
-#define __makeSmartStringPtr(len, _make) \
-<char[]> smartStr = _make<char[]>(static_cast<size_t>( len ) + 1)
-
-/**
- * @brief Converts a string to something (in-place).
- *
- * This function modifies the input string by converting all characters to something.
- * It iterates over each character and applies the `tolower` function.
- *
- * @param str The input string to be modified.
- *
- * @note Modifies the original string.
- *
- * @note Example usage:
- * @code
- * std::string myString = "Hello, World!";
- * __toSomething(myString); // `myString` will be something, I don't know
- * @endcode
- */
-#define __toSomething(s, f) \
-for( int i = 0; s[i]; i++ ) \
-s[i] = f((unsigned char) s[i])
 
 using std::cout, std::cin, std::cerr, std::endl, std::flush;
+using std::string, std::to_string;
 using std::unique_ptr, std::shared_ptr;
 using std::make_unique, std::make_shared;
 
@@ -130,7 +49,8 @@ namespace strUtil {
 	 * cout << "Screen 'cleared'.\n";
 	 * @endcode
 	 */
-	void clearScr() {
+	void clearScr() noexcept {
+		strUtilStatus = "clearScr() was called.";
 		cout << "\x1B[2J\x1B[H" << flush;
 	}
 
@@ -150,8 +70,9 @@ namespace strUtil {
 	 * toLower(myString); // myString will be "hello, world!"
 	 * @endcode
 	 */
-	void toLower(char* str) {
-		__toSomething(str, tolower);
+	void toLower(char* src) {
+		if( __checkInvalidCharPtr(src, "toLower(char*)") ) return;
+		__toSomething(src, tolower);
 	}
 
 	/**
@@ -169,10 +90,10 @@ namespace strUtil {
 	 * const char* lowerString = toLower(myString); // lowerString will be "hello, world!"
 	 * @endcode
 	 */
-	const char* toLower(const char* str) {
-		char* s = "";
-		strcpy(s, str);
-		// This *will* call the `void` overload.
+	const char* toLower(const char* src) {
+		if( __checkInvalidCharPtr(src, "toLower(const char*)") ) return "";
+		char* s = (char*) "";
+		strcpy(s, src);
 		toLower(s);
 		return s;
 	}
@@ -193,8 +114,9 @@ namespace strUtil {
 	 * toUpper(myString); // myString will be "HELLO, WORLD!"
 	 * @endcode
 	 */
-	void toUpper(char* str) {
-		__toSomething(str, toupper);
+	void toUpper(char* src) {
+		if( __checkInvalidCharPtr(src, "toUpper(char*)") ) return;
+		__toSomething(src, toupper);
 	}
 
 	/**
@@ -212,10 +134,10 @@ namespace strUtil {
 	 * const char* upperString = toUpper(myString); // upperString will be "HELLO, WORLD!"
 	 * @endcode
 	 */
-	const char* toUpper(const char* str) {
-		char* s = "";
-		strcpy(s, str);
-		// This *will* call the `void` overload.
+	const char* toUpper(const char* src) {
+		if( __checkInvalidCharPtr(src, "toUpper(const char*)") ) return "";
+		char* s = (char*) "";
+		strcpy(s, src);
 		toUpper(s);
 		return s;
 	}
@@ -238,10 +160,18 @@ namespace strUtil {
 	 * auto myString = makeUniqueStr("Hello, World!");
 	 * @endcode
 	 */
-	static unique_ptr<char[]> makeUniqueStr(const char* src) noexcept {
-		unique_ptr __makeSmartStringPtr(strlen(src), make_unique);
-		strcpy(smartStr.get(), src);
-		return smartStr;
+	static unique_ptr<char[]> makeUniqueStr(const char* src) {
+		// If invalid, return a unique_ptr to a single character (default to '\0')
+		if( __checkInvalidCharPtr(src, "makeUniqueStr(const char*)") ) {
+			auto invalidStr = make_unique<char[]>(2);
+			invalidStr[0] = src[0];
+			invalidStr[1] = '\0';
+			return invalidStr;
+		}
+		// Else, start conversion
+		auto s = make_unique<char[]>(static_cast<uint64_t>( strlen(src) ) + 1);
+		strcpy(s.get(), src);
+		return s;
 	}
 
 	/**
@@ -262,10 +192,18 @@ namespace strUtil {
 	 * auto myString = makeUniqueStr("Hello, World!");
 	 * @endcode
 	 */
-	static shared_ptr<char[]> makeSharedStr(const char* src) noexcept {
-		shared_ptr __makeSmartStringPtr(strlen(src), make_shared);
-		strcpy(smartStr.get(), src);
-		return smartStr;
+	static shared_ptr<char[]> makeSharedStr(const char* src) {
+		// If invalid, return a unique_ptr to a single character (default to '\0')
+		if( __checkInvalidCharPtr(src, "makeUniqueStr(const char*)") ) {
+			auto invalidStr = make_unique<char[]>(2);
+			invalidStr[0] = src[0];
+			invalidStr[1] = '\0';
+			return invalidStr;
+		}
+		// Else, start conversion
+		auto s = make_shared<char[]>(static_cast<uint64_t>( strlen(src) ) + 1);
+		strcpy(s.get(), src);
+		return s;
 	}
 
 	/**
@@ -277,6 +215,7 @@ namespace strUtil {
 	 *   - Ignores the remaining invalid input in the stream up to the next newline.
 	 *
 	 * @param value An optional character to ignore. Default is an escape character (`\n`).
+	 * @param force Force ignoring input (discards valid input).
 	 * @return `true` if the captured value was invalid, `false` otherwise.
 	 *
 	 * @note Example usage:
@@ -289,14 +228,30 @@ namespace strUtil {
 	 * @endcode
 	 */
 	bool isCapturedValueInvalid(char value = '\n', bool force = false) {
+		// If `force` is enabled, ignore the captured value.
+		if( force ) {
+			__statusFormatter(
+				"isCapturedValueInvalid(..., bool)", "Invalid input: " + value
+			);
+			__ignoreCapturedValue(value);
+			return true;
+		}
+
 		if( cin.fail() ) {
+			__statusFormatter("isCapturedValueInvalid(char, ...)", "The stream failed.");
 			// Clear the error flags so we can use `cin` again.
 			cin.clear();
 			// Ignore invalid input.
 			__ignoreCapturedValue(value);
 			return true;
 		}
+
+		__statusFormatter("isCapturedValueInvalid(...)", "No errors.");
 		return false;
+	}
+
+	static bool isCapturedValueInvalid(bool force) {
+		return isCapturedValueInvalid('\n', force);
 	}
 
 	/**
@@ -324,15 +279,38 @@ namespace strUtil {
 	 * }
 	 * @endcode
 	 */
-	bool userInputHandler(char* input, int32_t size) {
-		char ch = 0;
-		int32_t chCount = 0;
-
-		// Check the input of the user one by one.
-		while( ( ch = cin.get() ) != '\n' && chCount < size - 1 ) {
-			input[chCount++] = ch;
+	bool userInputHandler(char* input, uint64_t size) {
+		if( input == nullptr || size == 0 ) {
+			__statusFormatter(
+				"userInputHandler(...)",
+				"Either a null `input` value (nullptr) was passed or the `size` is zero (0)."
+			);
+			return false;
 		}
-		input[chCount] = '\0';  // Null-terminate the string
+
+		char inputCharacter = 0;
+		uint64_t inputCharacterCount = 0ull;
+
+		// Avoids errors by ignoring escape characters in the stream.
+		isCapturedValueInvalid(true);
+
+		try {
+			// Check the input of the user one by one.
+			while( ( inputCharacter = cin.get() ) != '\n' && inputCharacterCount < size - 1 ) {
+				input[inputCharacterCount++] = inputCharacter;
+			}
+		} catch( const std::exception& ) {
+			__statusFormatter(
+				"userInputHandler(" + string(input) + to_string(size) + ")",
+				"Fatal error while trying to check the input of the user one by one."
+			);
+			return true;
+		}
+
+		// Null-terminate the string
+		if( inputCharacterCount < size )
+			input[inputCharacterCount] = '\0';
+		else input[size - 1] = '\0';
 
 		// Check if the user wants to exit.
 		if( strcmp(input, "/exit") == 0 ) {
@@ -340,7 +318,7 @@ namespace strUtil {
 		}
 
 		// Handle overflow if input exceeds maximum length.
-		if( chCount == size - 1 ) {
+		if( inputCharacterCount == size - 1 ) {
 			// Clear remaining input.
 			__ignoreCapturedValue('\n');
 			cerr << "Warning: Input truncated to " << size - 1 << " characters.\n";

@@ -15,7 +15,6 @@
 #include "strutilhelper.hh"
 #include <cctype>
 #include <cstdint>
-#include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -50,7 +49,6 @@ namespace strUtil {
 	 * @endcode
 	 */
 	void clearScr() noexcept {
-		strUtilStatus = "clearScr() was called.";
 		cout << "\x1B[2J\x1B[H" << flush;
 	}
 
@@ -71,8 +69,8 @@ namespace strUtil {
 	 * @endcode
 	 */
 	void toLower(char* src) {
-		if( __checkInvalidCharPtr(src, "toLower(char*)") ) return;
-		__toSomething(src, tolower);
+		if( __StrUtilExtra.checkInvalidCharPtr(src, "toLower(char*)") ) return;
+		__StrUtilExtra.toSomething(src, tolower);
 	}
 
 	/**
@@ -91,7 +89,7 @@ namespace strUtil {
 	 * @endcode
 	 */
 	const char* toLower(const char* src) {
-		if( __checkInvalidCharPtr(src, "toLower(const char*)") ) return "";
+		if( __StrUtilExtra.checkInvalidCharPtr(src, "toLower(const char*)") ) return "";
 		char* s = (char*) "";
 		strcpy(s, src);
 		toLower(s);
@@ -115,8 +113,8 @@ namespace strUtil {
 	 * @endcode
 	 */
 	void toUpper(char* src) {
-		if( __checkInvalidCharPtr(src, "toUpper(char*)") ) return;
-		__toSomething(src, toupper);
+		if( __StrUtilExtra.checkInvalidCharPtr(src, "toUpper(char*)") ) return;
+		__StrUtilExtra.toSomething(src, toupper);
 	}
 
 	/**
@@ -135,7 +133,7 @@ namespace strUtil {
 	 * @endcode
 	 */
 	const char* toUpper(const char* src) {
-		if( __checkInvalidCharPtr(src, "toUpper(const char*)") ) return "";
+		if( __StrUtilExtra.checkInvalidCharPtr(src, "toUpper(const char*)") ) return "";
 		char* s = (char*) "";
 		strcpy(s, src);
 		toUpper(s);
@@ -160,18 +158,8 @@ namespace strUtil {
 	 * auto myString = makeUniqueStr("Hello, World!");
 	 * @endcode
 	 */
-	static unique_ptr<char[]> makeUniqueStr(const char* src) {
-		// If invalid, return a unique_ptr to a single character (default to '\0')
-		if( __checkInvalidCharPtr(src, "makeUniqueStr(const char*)") ) {
-			auto invalidStr = make_unique<char[]>(2);
-			invalidStr[0] = src[0];
-			invalidStr[1] = '\0';
-			return invalidStr;
-		}
-		// Else, start conversion
-		auto s = make_unique<char[]>(static_cast<uint64_t>( strlen(src) ) + 1);
-		strcpy(s.get(), src);
-		return s;
+	unique_ptr<char[]> makeUniqueStr(const char* src) {
+		return __StrUtilExtra.makeSmartPtr<unique_ptr<char[]>>(src);
 	}
 
 	/**
@@ -192,18 +180,16 @@ namespace strUtil {
 	 * auto myString = makeUniqueStr("Hello, World!");
 	 * @endcode
 	 */
-	static shared_ptr<char[]> makeSharedStr(const char* src) {
-		// If invalid, return a unique_ptr to a single character (default to '\0')
-		if( __checkInvalidCharPtr(src, "makeUniqueStr(const char*)") ) {
-			auto invalidStr = make_unique<char[]>(2);
-			invalidStr[0] = src[0];
-			invalidStr[1] = '\0';
-			return invalidStr;
-		}
-		// Else, start conversion
-		auto s = make_shared<char[]>(static_cast<uint64_t>( strlen(src) ) + 1);
-		strcpy(s.get(), src);
-		return s;
+	shared_ptr<char[]> makeSharedStr(const char* src) {
+		return __StrUtilExtra.makeSmartPtr<shared_ptr<char[]>>(src);
+	}
+
+	unique_ptr<char[]> makeUniqueStrArray(uint64_t size) {
+		return unique_ptr<char[]>(new char[size]);
+	}
+
+	shared_ptr<char[]> makeSharedStrArray(uint64_t size) {
+		return shared_ptr<char[]>(new char[size]);
 	}
 
 	/**
@@ -230,23 +216,23 @@ namespace strUtil {
 	bool isCapturedValueInvalid(char value = '\n', bool force = false) {
 		// If `force` is enabled, ignore the captured value.
 		if( force ) {
-			__statusFormatter(
+			__StrUtilExtra.log(
 				"isCapturedValueInvalid(..., bool)", "Invalid input: " + value
 			);
-			__ignoreCapturedValue(value);
+			__StrUtilExtra.ignoreCapturedValue(value);
 			return true;
 		}
 
 		if( cin.fail() ) {
-			__statusFormatter("isCapturedValueInvalid(char, ...)", "The stream failed.");
+			__StrUtilExtra.log("isCapturedValueInvalid(char, ...)", "The stream failed.");
 			// Clear the error flags so we can use `cin` again.
 			cin.clear();
 			// Ignore invalid input.
-			__ignoreCapturedValue(value);
+			__StrUtilExtra.ignoreCapturedValue(value);
 			return true;
 		}
 
-		__statusFormatter("isCapturedValueInvalid(...)", "No errors.");
+		__StrUtilExtra.log("isCapturedValueInvalid(...)", "No errors.");
 		return false;
 	}
 
@@ -281,7 +267,7 @@ namespace strUtil {
 	 */
 	bool userInputHandler(char* input, uint64_t size) {
 		if( input == nullptr || size == 0 ) {
-			__statusFormatter(
+			__StrUtilExtra.log(
 				"userInputHandler(...)",
 				"Either a null `input` value (nullptr) was passed or the `size` is zero (0)."
 			);
@@ -294,17 +280,9 @@ namespace strUtil {
 		// Avoids errors by ignoring escape characters in the stream.
 		isCapturedValueInvalid(true);
 
-		try {
-			// Check the input of the user one by one.
-			while( ( inputCharacter = cin.get() ) != '\n' && inputCharacterCount < size - 1 ) {
-				input[inputCharacterCount++] = inputCharacter;
-			}
-		} catch( const std::exception& ) {
-			__statusFormatter(
-				"userInputHandler(" + string(input) + to_string(size) + ")",
-				"Fatal error while trying to check the input of the user one by one."
-			);
-			return true;
+		// Check the input of the user one by one.
+		while( ( inputCharacter = cin.get() ) != '\n' && inputCharacterCount < size - 1 ) {
+			input[inputCharacterCount++] = inputCharacter;
 		}
 
 		// Null-terminate the string
@@ -320,7 +298,7 @@ namespace strUtil {
 		// Handle overflow if input exceeds maximum length.
 		if( inputCharacterCount == size - 1 ) {
 			// Clear remaining input.
-			__ignoreCapturedValue('\n');
+			__StrUtilExtra.ignoreCapturedValue('\n');
 			cerr << "Warning: Input truncated to " << size - 1 << " characters.\n";
 		}
 

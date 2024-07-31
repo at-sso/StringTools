@@ -92,7 +92,7 @@ namespace strTools {
 	std::unique_ptr<char[]> subStr(const char* s, const uint64_t i, uint64_t j) {
 		auto sLen = strlen(s);
 
-		__checkLogicErrors(
+		__StrUtilExtra.checkLogicErrors(
 			i >= sLen || i + j > sLen,
 			"The indices 'i' and 'j' must be non-negative and "
 			"the length must not exceed the length of the original string.\n"
@@ -128,7 +128,7 @@ namespace strTools {
 	 * @endcode
 	 */
 	std::unique_ptr<char[]> insertStr(const char* s1, const char* s2, const uint64_t i) {
-		__checkLogicErrors(
+		__StrUtilExtra.checkLogicErrors(
 			1 <= i || i <= strlen(s1) + 1,
 			"The value of 'i' must be in the range of 1 to the length of s1 + 1"
 		);
@@ -161,15 +161,15 @@ namespace strTools {
 	 * @endcode
 	 */
 	std::unique_ptr<char[]> delSubStr(const char* s, const uint64_t i, const uint64_t j) {
-		__checkLogicErrors(
+		__StrUtilExtra.checkLogicErrors(
 			0 <= i && i < strlen(s),
 			"Position of `i` must be between 0 and the length of the string."
 		);
-		__checkLogicErrors(
+		__StrUtilExtra.checkLogicErrors(
 			0 <= j && j < strlen(s),
 			"Length `j` must be between 0 and the length of the string."
 		);
-		__checkLogicErrors(
+		__StrUtilExtra.checkLogicErrors(
 			0 <= i + j - 1 && i + j - 1 < strlen(s),
 			"Position i+j-1 must be between 0 and the length of the string."
 		);

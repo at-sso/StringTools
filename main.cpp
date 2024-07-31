@@ -11,7 +11,6 @@
 
 #include "src/strtools.hh"
 #include "src/strutil.hh"
-#include "src/strutilhelper.hh"
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -22,13 +21,13 @@
 #include <string>
 #include <string.h>
 
- /// @brief String max input size.
-#define STRING_MAX_SIZE 256
-/// @brief Array of characters with an empty array.
-#define EMPTY_CHAR (char*) ""
+ /// @brief String max input size
+static constexpr int16_t STRING_MAX_SIZE = 256;
+static constexpr char* EMPTY_CHAR = (char*) "";
 
 using std::cout, std::cin, std::endl, std::flush;
 using std::string;
+using std::unique_ptr, std::make_unique;
 
 /**
  * @brief Main function demonstrating examples on how to use the strtools.hh header.
@@ -144,7 +143,7 @@ using std::string;
  */
 int main() {
 	bool mainLoop = true;
-	bool showStatus = false;
+
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
@@ -158,7 +157,6 @@ int main() {
 			"3. Search for a character in a string.\n"
 			"4. Generate a substring from a string.\n"
 			"0. Exit.\n"
-			<< ( showStatus ? strUtil::strUtilStatus + '\n' : "" )
 			<< extraMsg << "\n\n> " << flush;
 		cin >> selector;
 
@@ -173,10 +171,9 @@ int main() {
 		switch( selector ) {
 		default: extraMsg = "Value is out of bounds!"; break;
 		case 0: mainLoop = false; break;
-		case -1: showStatus = !showStatus; break;
 		case 1: // Calculate the length of a string.
 		{
-			std::unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
+			unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
 
 			cout << "Enter a string (type '/exit' to quit).\n" << flush;
 			cin.ignore();
@@ -185,9 +182,9 @@ int main() {
 			while( true ) {
 				cout << "> ";
 				// Call the user input handler.
-				if( strUtil::userInputHandler(strLen.get(), STRING_MAX_SIZE) ) {
+				if( strUtil::userInputHandler(strLen.get(), STRING_MAX_SIZE) )
 					break;
-				}
+
 				// Show the results.
 				cout <<
 					"The length of '" << strLen.get() << "' is: "
@@ -201,9 +198,14 @@ int main() {
 		case 2: // Concatenate three strings requested.
 		{
 			// Array values to be modified by the user.
-			std::array<char*, 3> stringVals = { EMPTY_CHAR, EMPTY_CHAR, EMPTY_CHAR };
+			std::array<unique_ptr<char[]>, 3> stringVals = {
+				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+			};
+
 			// This helper allows the array values to be modified easily.
-			char* strHelper = EMPTY_CHAR;
+			unique_ptr<char[]> strHelper(new char[STRING_MAX_SIZE]);
 			bool exitWasCaptured = false;
 
 			cout <<
@@ -213,11 +215,11 @@ int main() {
 			// Start the operation.
 			for( int16_t i = 0; i < 3; ++i ) {
 				cout << "> ";
-				if( strUtil::userInputHandler(strHelper, STRING_MAX_SIZE) ) {
+				if( strUtil::userInputHandler(strHelper.get(), STRING_MAX_SIZE) ) {
 					exitWasCaptured = true;
 					break;
 				}
-				strcpy(stringVals[i], strHelper);
+				strcpy(stringVals[i].get(), strHelper.get());
 			}
 
 			if( exitWasCaptured ) {
@@ -226,8 +228,8 @@ int main() {
 			}
 
 			// Combine (concat) all the strings into one string.
-			auto r = strTools::concatStr(stringVals[0], stringVals[1]);
-			r = strTools::concatStr(r.get(), stringVals[2]);
+			auto r = strTools::concatStr(stringVals[0].get(), stringVals[1].get());
+			r = strTools::concatStr(r.get(), stringVals[2].get());
 			// Combine the final string with some extra output.
 			r = strTools::concatStr("Concatenated string: ", r.get());
 			extraMsg = r.get();
@@ -238,12 +240,15 @@ int main() {
 		} // case 2
 		case 3: // Search for a character in a string.
 		{
-			std::array<char*, 2> stringVals = { EMPTY_CHAR, EMPTY_CHAR };
+			std::array< unique_ptr<char[]>, 2> stringVals = {
+				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+			};
 
 			// This will return true if the input is '/exit'.
 			auto getNextLine = [&stringVals](const uint64_t& i) {
 				cout << "> ";
-				return strUtil::userInputHandler(stringVals[i], STRING_MAX_SIZE);
+				return strUtil::userInputHandler(stringVals[i].get(), STRING_MAX_SIZE);
 				};
 
 			// Start position of the string.
@@ -271,7 +276,7 @@ int main() {
 				}
 
 				// Get the start position (i) by finding the first index.
-				startPos = strTools::findSubStr(stringVals[0], stringVals[1]);
+				startPos = strTools::findSubStr(stringVals[0].get(), stringVals[1].get());
 				if( startPos == -1 ) {
 					cout << "Substring not found in the original string!\n";
 					continue;
@@ -285,9 +290,9 @@ int main() {
 			}
 
 			// Get the number of characters to extract after `startPos` (j).
-			uint64_t finalPos = strlen(stringVals[1]);
+			uint64_t finalPos = strlen(stringVals[1].get());
 			// Extract the characters.
-			auto finalString = strTools::subStr(stringVals[0], startPos, finalPos);
+			auto finalString = strTools::subStr(stringVals[0].get(), startPos, finalPos);
 
 			// Copy the final string to the extra message in the main menu.
 			auto r = strTools::concatStr("Extracted string: ", finalString.get());
@@ -308,8 +313,8 @@ int main() {
 				return distr(gen);
 				};
 
-			char* originalString = EMPTY_CHAR;
-			std::unique_ptr<char[]> subStrFromOriginal(new char[STRING_MAX_SIZE]);
+			unique_ptr<char[]> originalString(new char[STRING_MAX_SIZE]);
+			unique_ptr<char[]> subStrFromOriginal(new char[STRING_MAX_SIZE]);
 			uint64_t strLen = 0ull, strLowIndex = 0ull, strUppIndex = 0ull;
 
 			cout <<
@@ -318,8 +323,8 @@ int main() {
 
 			while( true ) {
 				cout << "> ";
-				if( !strUtil::userInputHandler(originalString, STRING_MAX_SIZE) ) {
-					strLen = strlen(originalString);
+				if( !strUtil::userInputHandler(originalString.get(), STRING_MAX_SIZE) ) {
+					strLen = strlen(originalString.get());
 
 					// Ensure valid indices.
 					// This will never stop until there are valid indices.
@@ -330,7 +335,7 @@ int main() {
 
 					// Once the values are valid, get the substring.
 					subStrFromOriginal = strTools::subStr(
-						originalString, strLowIndex, strUppIndex - strLowIndex
+						originalString.get(), strLowIndex, strUppIndex - strLowIndex
 					);
 					cout <<
 						"Extracted substring: '" << subStrFromOriginal.get() << "'\n" << flush;

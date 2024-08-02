@@ -1,6 +1,6 @@
 # StringTools
 
-The `strTools` namespace provides a set of tools for manipulating C-style strings. These functions are designed to simplify common string operations, such as concatenation, substring extraction, insertion, deletion, searching, and replacement. The library ensures proper memory management using `std::unique_ptr<char[]>`.
+The `strTools` namespace provides a set of tools for manipulating C-style strings. These functions are designed to simplify common string operations, such as concatenation, substring extraction, insertion, deletion, searching, and replacement. The library ensures proper memory management using `unique_ptr<char[]>`.
 
 ## Index
 
@@ -50,12 +50,19 @@ This project provides a string manipulation library to easily handle strings. It
 
 ## Installation
 
-To use the `strTools` library, include the `strtools.hh` header in your C++ project:
+To use the `strTools` & `strUtil` library, include the `strtools.hh` header in your C++ project:
 
 ```cpp
+#include "src/.hxx"
+```
+
+or:
+
+```cpp
+#include "src/strlogger.hh"
 #include "src/strtools.hh"
-// or
-#include "strtools.hh"
+#include "src/strutil.hh"
+#include "src/strutilhelper.hh"
 ```
 
 Ensure that your project is set up to find the header file in its include path.
@@ -63,7 +70,7 @@ Ensure that your project is set up to find the header file in its include path.
 You can also try running the test program using:
 
 ```bash
-g++ -std=c++20 -I src main.cpp -o main.exe && ./main.exe
+g++ -std=c++17 -I src main.cpp -o main.exe && ./main.exe
 ```
 
 ## Namespace Usage

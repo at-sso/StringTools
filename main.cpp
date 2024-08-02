@@ -9,10 +9,7 @@
  *
  */
 
-#include "src/strlogger.hh"
-#include "src/strtools.hh"
-#include "src/strutil.hh"
-#include "src/strutilhelper.hh"
+#include "src/.hxx"
 #include <array>
 #include <cstdint>
 #include <iostream>

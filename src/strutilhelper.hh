@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "strlogger.h"
+#include "strlogger.hh"
 #include <cstring>
 #include <iosfwd>
 #include <iostream>
@@ -21,8 +21,6 @@
 
 using std::cin, std::cerr, std::endl, std::numeric_limits;
 using std::string, std::to_string;
-
-namespace fs = std::filesystem;
 
 static void _strLogger(const string& from, const string& s, __StrToolsLogLvl lvl = __StrToolsLogLvl::INFO) {
 	return __strToolsLogger.log(lvl, from + ": " + s);
@@ -46,10 +44,10 @@ public:
 	 * @code
 	 * int value;
 	 * std::cin >> value;
-	 * __ignoreCapturedValue('\n');
+	 * ignoreCapturedValue('\n');
 	 * @endcode
 	 */
-	void ignoreCapturedValue(char s, bool doClear = true) {
+	void ignoreCapturedValue(char s, bool doClear = true) noexcept {
 		_strLogger("ignoreCapturedValue(char, bool)", to_string(s) + ", " + to_string(doClear));
 		if( doClear ) cin.clear();
 		cin.ignore(numeric_limits<std::streamsize>::max(), s);
@@ -68,11 +66,15 @@ public:
 	 *
 	 * @note Example usage:
 	 * @code
-	 * __checkLogicErrors(index < arraySize, "Index out of range");
+	 * checkLogicErrors(index < arraySize, "Index out of range");
 	 * @endcode
 	 */
 	void checkLogicErrors(bool rule, const string& msg) {
-		_strLogger("checkLogicErrors(bool, string)", to_string(rule) + ", " + msg, __StrToolsLogLvl::WARNING);
+		_strLogger(
+			"checkLogicErrors(bool, string)",
+			( rule ? "true, " + msg : "false." ),
+			__StrToolsLogLvl::WARNING
+		);
 		if( rule ) throw std::runtime_error(msg);
 	}
 
@@ -90,10 +92,11 @@ public:
 	 * @note Example usage:
 	 * @code
 	 * std::string myString = "Hello, World!";
-	 * __toSomething(myString); // `myString` will be something, I don't know
+	 * toSomething(myString); // `myString` will be something, I don't know
 	 * @endcode
 	 */
 	void toSomething(char* s, int ( *f )( int )) {
+		if( this->checkInvalidCharPtr(s, "toUpper(char*)") ) return;
 		_strLogger("toSomething(char*, *func)", to_string(*s) + ", func");
 		for( int i = 0; s[i]; i++ ) {
 			s[i] = f((unsigned char) s[i]);
@@ -114,7 +117,7 @@ public:
 	 * @note Example usage:
 	 * @code
 	 * char* myString = nullptr;
-	 * __checkInvalidCharPtr(myString); // Throws an exception with the message.
+	 * checkInvalidCharPtr(myString); // Throws an exception with the message.
 	 * @endcode
 	 */
 	bool checkInvalidCharPtr(const char* s, const string& from) noexcept {
@@ -122,13 +125,30 @@ public:
 			_strLogger(
 				from,
 				"Expected a valid character pointer but a nullptr was received.",
-				__StrToolsLogLvl::WARNING
+				__StrToolsLogLvl::ERROR
 			);
 			return true;
 		}
 		return false;
 	}
 
+	/**
+	 * @brief Creates a smart pointer from a C-string.
+	 *
+	 * This template function takes a C-string and creates a smart pointer of the specified type,
+	 * managing the memory allocation and copying of the string.
+	 *
+	 * @tparam T The type of the smart pointer to create.
+	 * @param src The source C-string to copy.
+	 * @return A smart pointer of type T containing the copied string.
+	 *
+	 * @note Example usage:
+	 * @code
+	 * const char* source = "Example";
+	 * auto result = makeSmartPtr<std::unique_ptr<char[]>>(source);
+	 * // result will contain "Example"
+	 * @endcode
+	 */
 	template <class T>
 	T makeSmartPtr(const char* src) noexcept {
 		_strLogger("makeSmartPtr()", src);

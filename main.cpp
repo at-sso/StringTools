@@ -9,7 +9,7 @@
  *
  */
 
-#include "src/strlogger.h"
+#include "src/strlogger.hh"
 #include "src/strtools.hh"
 #include "src/strutil.hh"
 #include "src/strutilhelper.hh"
@@ -23,11 +23,11 @@
 #include <string>
 #include <string.h>
 
-/// @brief String max input size
+ /// @brief String max input size
 static constexpr int16_t _STRING_MAX_SIZE = 256;
 /// @brief Reference to `__StrUtilExtra.log(...)`.
-static void _logger(const std::string& s) {
-	return _strLogger("int main(): ", s);
+static void _logger(const std::string& s, __StrToolsLogLvl lvl = __StrToolsLogLvl::INFO) {
+	return _strLogger("int main()", s, lvl);
 }
 
 using std::cout, std::cin, std::endl, std::flush;
@@ -148,14 +148,15 @@ using std::unique_ptr, std::make_unique;
  */
 int main() {
 	bool mainLoop = true;
-	__strToolsLogger.toggleLogger(); // Uncomment this for debbugging.
-	__strToolsLogger.setLogFile("./src/_dump.log"); 
+	// __strToolsLogger.toggleLogger(); // Uncomment this for debbugging.
+	__strToolsLogger.setLogFile("./src/_dump.log");
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
 	string extraMsg = ":D";
 
 	do {
+		_logger("main loop started");
 		strUtil::clearScr();
 		cout <<
 			"1. Calculate the length of a string.\n"
@@ -169,19 +170,21 @@ int main() {
 		// Check if the captured value is invalid.
 		if( strUtil::isCapturedValueInvalid() ) {
 			extraMsg = "Value is invalid!";
+			_logger(extraMsg, __StrToolsLogLvl::WARNING);
 			continue;
 		}
 
 		cout.flush();
 
 		switch( selector ) {
-		default: extraMsg = "Value is out of bounds!"; break;
+		default: extraMsg = "Value is out of bounds!"; _logger(extraMsg, __StrToolsLogLvl::WARNING); break;
+		case -1: __strToolsLogger.toggleLogger(); break;
 		case 0: mainLoop = false; break;
 		case 1: // Calculate the length of a string.
 		{
 			_logger("case 1 started.");
 			// Initialize a smart pointer to handle the string lenght.
-			unique_ptr<char[]> strLen(new char[_STRING_MAX_SIZE]);
+			uniqueStr strLen(new char[_STRING_MAX_SIZE]);
 
 			cout << "Enter a string (type '/exit' to quit).\n" << flush;
 			cin.ignore();
@@ -208,19 +211,19 @@ int main() {
 		{
 			_logger("case 2 started.");
 			// Array values to be modified by the user.
-			std::array<unique_ptr<char[]>, 3> stringVals = {
-				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
+			std::array<uniqueStr, 3> stringVals = {
+				strUtil::makeSmartPtrArray<uniqueStr>(_STRING_MAX_SIZE),
+				strUtil::makeSmartPtrArray<uniqueStr>(_STRING_MAX_SIZE),
+				strUtil::makeSmartPtrArray<uniqueStr>(_STRING_MAX_SIZE),
 			};
 
 			// This helper allows the array values to be modified easily.
-			unique_ptr<char[]> strHelper(new char[_STRING_MAX_SIZE]);
+			uniqueStr strHelper(new char[_STRING_MAX_SIZE]);
 			bool exitWasCaptured = false;
 
 			cout <<
 				"Enter 3 strings (type '/exit' at any moment to quit).\n"
-				"The result will be shown after this operation ends.\n\n" << flush;
+				<< flush;
 			cin.ignore();
 
 			// Start the operation.
@@ -254,9 +257,9 @@ int main() {
 		case 3: // Search for a character in a string.
 		{
 			_logger("case 3 started.");
-			std::array<unique_ptr<char[]>, 2> stringVals = {
-				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
+			std::array<uniqueStr, 2> stringVals = {
+				strUtil::makeSmartPtrArray<uniqueStr>(_STRING_MAX_SIZE),
+				strUtil::makeSmartPtrArray<uniqueStr>(_STRING_MAX_SIZE),
 			};
 
 			// This will return true if the input is '/exit'.
@@ -272,7 +275,8 @@ int main() {
 			cout <<
 				"Enter a string and then a substring you want to find\n"
 				"(type '/exit' at any moment to quit).\n"
-				"The result will be shown after this operation ends.\n\n" << flush;
+				"The result will be shown after this operation ends.\n\n"
+				<< flush;
 			cin.ignore();
 
 			// Capture the first string. Since this can be anything,
@@ -330,13 +334,14 @@ int main() {
 				return distr(gen);
 				};
 
-			unique_ptr<char[]> originalString(new char[_STRING_MAX_SIZE]);
-			unique_ptr<char[]> subStrFromOriginal(new char[_STRING_MAX_SIZE]);
+			uniqueStr originalString(new char[_STRING_MAX_SIZE]);
+			uniqueStr subStrFromOriginal(new char[_STRING_MAX_SIZE]);
 			uint64_t strLen = 0ull, strLowIndex = 0ull, strUppIndex = 0ull;
 
 			cout <<
 				"Enter a string (type '/exit' at any moment to quit).\n"
-				"The substring will be generated randomly.\n" << flush;
+				"The substring will be generated randomly.\n"
+				<< flush;
 			cin.ignore();
 
 			while( true ) {
@@ -356,7 +361,8 @@ int main() {
 						originalString.get(), strLowIndex, strUppIndex - strLowIndex
 					);
 					cout <<
-						"Extracted substring: '" << subStrFromOriginal.get() << "'\n" << flush;
+						"Extracted substring: '" << subStrFromOriginal.get() << "'\n"
+						<< flush;
 				} else break;
 			};
 
@@ -369,5 +375,6 @@ int main() {
 	} while( mainLoop );
 
 	cout << "Bye bye!" << endl;
+	_logger("main loop ended.");
 	return 0;
 }

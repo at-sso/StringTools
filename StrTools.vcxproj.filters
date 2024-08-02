@@ -29,5 +29,8 @@
     <ClInclude Include="src\strutilhelper.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\strlogger.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

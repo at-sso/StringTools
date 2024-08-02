@@ -135,6 +135,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\strlogger.hh" />
     <ClInclude Include="src\strtools.hh" />
     <ClInclude Include="src\strutil.hh" />
     <ClInclude Include="src\strutilhelper.hh" />

@@ -9,8 +9,10 @@
  *
  */
 
+#include "src/strlogger.h"
 #include "src/strtools.hh"
 #include "src/strutil.hh"
+#include "src/strutilhelper.hh"
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -21,9 +23,12 @@
 #include <string>
 #include <string.h>
 
- /// @brief String max input size
-static constexpr int16_t STRING_MAX_SIZE = 256;
-static constexpr char* EMPTY_CHAR = (char*) "";
+/// @brief String max input size
+static constexpr int16_t _STRING_MAX_SIZE = 256;
+/// @brief Reference to `__StrUtilExtra.log(...)`.
+static void _logger(const std::string& s) {
+	return _strLogger("int main(): ", s);
+}
 
 using std::cout, std::cin, std::endl, std::flush;
 using std::string;
@@ -143,7 +148,8 @@ using std::unique_ptr, std::make_unique;
  */
 int main() {
 	bool mainLoop = true;
-
+	__strToolsLogger.toggleLogger(); // Uncomment this for debbugging.
+	__strToolsLogger.setLogFile("./src/_dump.log"); 
 	// Value to be captured from the CLI.
 	int32_t selector = 0;
 	// Extra message.
@@ -155,7 +161,7 @@ int main() {
 			"1. Calculate the length of a string.\n"
 			"2. Concatenate three strings requested.\n"
 			"3. Search for a character in a string.\n"
-			"4. Generate a substring from a string.\n"
+			"4. Generate a random substring from a string.\n"
 			"0. Exit.\n"
 			<< extraMsg << "\n\n> " << flush;
 		cin >> selector;
@@ -173,7 +179,9 @@ int main() {
 		case 0: mainLoop = false; break;
 		case 1: // Calculate the length of a string.
 		{
-			unique_ptr<char[]> strLen(new char[STRING_MAX_SIZE]);
+			_logger("case 1 started.");
+			// Initialize a smart pointer to handle the string lenght.
+			unique_ptr<char[]> strLen(new char[_STRING_MAX_SIZE]);
 
 			cout << "Enter a string (type '/exit' to quit).\n" << flush;
 			cin.ignore();
@@ -182,7 +190,7 @@ int main() {
 			while( true ) {
 				cout << "> ";
 				// Call the user input handler.
-				if( strUtil::userInputHandler(strLen.get(), STRING_MAX_SIZE) )
+				if( strUtil::userInputHandler(strLen.get(), _STRING_MAX_SIZE) )
 					break;
 
 				// Show the results.
@@ -193,29 +201,32 @@ int main() {
 
 			// Flush the stream.
 			cout.flush();
+			_logger("case 1 ended.");
 			break;
 		} // case 1
 		case 2: // Concatenate three strings requested.
 		{
+			_logger("case 2 started.");
 			// Array values to be modified by the user.
 			std::array<unique_ptr<char[]>, 3> stringVals = {
-				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
 			};
 
 			// This helper allows the array values to be modified easily.
-			unique_ptr<char[]> strHelper(new char[STRING_MAX_SIZE]);
+			unique_ptr<char[]> strHelper(new char[_STRING_MAX_SIZE]);
 			bool exitWasCaptured = false;
 
 			cout <<
 				"Enter 3 strings (type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n" << flush;
+			cin.ignore();
 
 			// Start the operation.
 			for( int16_t i = 0; i < 3; ++i ) {
 				cout << "> ";
-				if( strUtil::userInputHandler(strHelper.get(), STRING_MAX_SIZE) ) {
+				if( strUtil::userInputHandler(strHelper.get(), _STRING_MAX_SIZE) ) {
 					exitWasCaptured = true;
 					break;
 				}
@@ -224,6 +235,7 @@ int main() {
 
 			if( exitWasCaptured ) {
 				extraMsg = "Operation was cancelled.";
+				_logger(extraMsg + "at case 2.");
 				break;
 			}
 
@@ -236,19 +248,21 @@ int main() {
 
 			// Flush the stream.
 			cout.flush();
+			_logger("case 2 ended.");
 			break;
 		} // case 2
 		case 3: // Search for a character in a string.
 		{
-			std::array< unique_ptr<char[]>, 2> stringVals = {
-				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
-				strUtil::makeUniqueStrArray(STRING_MAX_SIZE),
+			_logger("case 3 started.");
+			std::array<unique_ptr<char[]>, 2> stringVals = {
+				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
+				strUtil::makeUniqueStrArray(_STRING_MAX_SIZE),
 			};
 
 			// This will return true if the input is '/exit'.
 			auto getNextLine = [&stringVals](const uint64_t& i) {
 				cout << "> ";
-				return strUtil::userInputHandler(stringVals[i].get(), STRING_MAX_SIZE);
+				return strUtil::userInputHandler(stringVals[i].get(), _STRING_MAX_SIZE);
 				};
 
 			// Start position of the string.
@@ -259,6 +273,7 @@ int main() {
 				"Enter a string and then a substring you want to find\n"
 				"(type '/exit' at any moment to quit).\n"
 				"The result will be shown after this operation ends.\n\n" << flush;
+			cin.ignore();
 
 			// Capture the first string. Since this can be anything,
 			// there's no need to handle the input.
@@ -300,10 +315,12 @@ int main() {
 
 			// Flush the stream.
 			cout.flush();
+			_logger("case 3 ended.");
 			break;
 		} // case 3
 		case 4: // Generate a substring from a string.
 		{
+			_logger("case 4 started.");
 			// Seed the random number engine with the current time.
 			std::random_device rd;
 			std::mt19937_64 gen(rd());
@@ -313,17 +330,18 @@ int main() {
 				return distr(gen);
 				};
 
-			unique_ptr<char[]> originalString(new char[STRING_MAX_SIZE]);
-			unique_ptr<char[]> subStrFromOriginal(new char[STRING_MAX_SIZE]);
+			unique_ptr<char[]> originalString(new char[_STRING_MAX_SIZE]);
+			unique_ptr<char[]> subStrFromOriginal(new char[_STRING_MAX_SIZE]);
 			uint64_t strLen = 0ull, strLowIndex = 0ull, strUppIndex = 0ull;
 
 			cout <<
 				"Enter a string (type '/exit' at any moment to quit).\n"
 				"The substring will be generated randomly.\n" << flush;
+			cin.ignore();
 
 			while( true ) {
 				cout << "> ";
-				if( !strUtil::userInputHandler(originalString.get(), STRING_MAX_SIZE) ) {
+				if( !strUtil::userInputHandler(originalString.get(), _STRING_MAX_SIZE) ) {
 					strLen = strlen(originalString.get());
 
 					// Ensure valid indices.
@@ -339,13 +357,12 @@ int main() {
 					);
 					cout <<
 						"Extracted substring: '" << subStrFromOriginal.get() << "'\n" << flush;
-				} else {
-					break;
-				}
+				} else break;
 			};
 
 			// Flush the stream (just in case).
 			cout.flush();
+			_logger("case 4 ended.");
 			break;
 		} // case 4
 		}; // switch ( selector )

@@ -11,50 +11,36 @@
 
 #pragma once
 
+#include "strlogger.h"
 #include <cstring>
-#include <filesystem>
-#include <fstream>
 #include <iosfwd>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
 
+using std::cin, std::cerr, std::endl, std::numeric_limits;
+using std::string, std::to_string;
+
+namespace fs = std::filesystem;
+
+static void _strLogger(const string& from, const string& s, __StrToolsLogLvl lvl = __StrToolsLogLvl::INFO) {
+	return __strToolsLogger.log(lvl, from + ": " + s);
+}
+
 class __StrUtilHelper {
 private:
-	std::string __strUtilLoggerFilePath;
-	std::ofstream __strUtilLoggerFileHandler;
+	string __strUtilLoggerFilePath;
 
 public:
-	__StrUtilHelper()
-		: __strUtilLoggerFilePath(std::filesystem::current_path().string() + "/src/_dump.log"),
-		__strUtilLoggerFileHandler(__strUtilLoggerFilePath, std::ios::binary) {
-		if( !this->__strUtilLoggerFileHandler.is_open() ) {
-			std::cerr << "Failed to open log file: " << this->__strUtilLoggerFilePath << std::endl;
-		}
-	}
-
-	~__StrUtilHelper() {
-		if( this->__strUtilLoggerFileHandler.is_open() )
-			this->__strUtilLoggerFileHandler.close();
-	}
-
-	// Logs a message.
-	void log(const std::string& from, const std::string& msg) {
-		if( this->__strUtilLoggerFileHandler.is_open() )
-			this->__strUtilLoggerFileHandler << "- `" + from + "`: " + msg << std::endl;
-	}
-
-	// Closes the logger.
-	void closeLogger() {
-		this->__strUtilLoggerFileHandler.close();
-	}
-
 	/**
 	 * @brief Ignores invalid input from standard input.
 	 *
 	 * This function clears the error flags from `cin` and ignores remaining invalid input
 	 * up to the next newline. It is typically used after a failed input operation.
+	 *
+	 * @param s Character to ignore.
+	 * @param doClear Clears the error state if `true`.
 	 *
 	 * @note Example usage:
 	 * @code
@@ -63,8 +49,10 @@ public:
 	 * __ignoreCapturedValue('\n');
 	 * @endcode
 	 */
-	static void ignoreCapturedValue(char s) {
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), s);
+	void ignoreCapturedValue(char s, bool doClear = true) {
+		_strLogger("ignoreCapturedValue(char, bool)", to_string(s) + ", " + to_string(doClear));
+		if( doClear ) cin.clear();
+		cin.ignore(numeric_limits<std::streamsize>::max(), s);
 	}
 
 	/**
@@ -83,8 +71,9 @@ public:
 	 * __checkLogicErrors(index < arraySize, "Index out of range");
 	 * @endcode
 	 */
-	static void checkLogicErrors(bool rule, const std::string& msg) {
-		if( rule ) throw std::out_of_range(msg);
+	void checkLogicErrors(bool rule, const string& msg) {
+		_strLogger("checkLogicErrors(bool, string)", to_string(rule) + ", " + msg, __StrToolsLogLvl::WARNING);
+		if( rule ) throw std::runtime_error(msg);
 	}
 
 	/**
@@ -104,9 +93,11 @@ public:
 	 * __toSomething(myString); // `myString` will be something, I don't know
 	 * @endcode
 	 */
-	static void toSomething(char* s, int ( *f )( int )) {
-		for( int i = 0; s[i]; i++ )
+	void toSomething(char* s, int ( *f )( int )) {
+		_strLogger("toSomething(char*, *func)", to_string(*s) + ", func");
+		for( int i = 0; s[i]; i++ ) {
 			s[i] = f((unsigned char) s[i]);
+		}
 	}
 
 	/**
@@ -126,10 +117,12 @@ public:
 	 * __checkInvalidCharPtr(myString); // Throws an exception with the message.
 	 * @endcode
 	 */
-	bool checkInvalidCharPtr(const char* s, const std::string& from) {
+	bool checkInvalidCharPtr(const char* s, const string& from) noexcept {
 		if( s == nullptr || *s == '\0' ) {
-			this->log(from,
-				"Expected a valid character pointer but a nullptr was received."
+			_strLogger(
+				from,
+				"Expected a valid character pointer but a nullptr was received.",
+				__StrToolsLogLvl::WARNING
 			);
 			return true;
 		}
@@ -137,7 +130,8 @@ public:
 	}
 
 	template <class T>
-	T makeSmartPtr(const char* src) {
+	T makeSmartPtr(const char* src) noexcept {
+		_strLogger("makeSmartPtr()", src);
 		// If invalid, return the T to a null terminator.
 		if( this->checkInvalidCharPtr(src, "__makeSmartPtr(const char*)") ) {
 			T empty(new char[1]);
